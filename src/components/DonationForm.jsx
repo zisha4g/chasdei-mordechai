@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
 // ── DonorFuse donation link and campaign ID
-const DF_LINK = 'https://donate.donorfuse.com/cm';
+const DF_LINK = 'cm';  // URL slug from https://donate.donorfuse.com/cm
 const DF_CAMPAIGN_ID = 11426; // $1,000 Raffle 3
 
 const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
@@ -61,9 +61,11 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       phone: phone || undefined,
     };
 
-    window.DonorFuseClient.ShowPopup(options, (success) => {
+    window.DonorFuseClient.ShowPopup(options, (result) => {
       setIsSubmitting(false);
-      if (success) {
+      // DonorFuse passes true (boolean) on successful payment, and false/object/undefined on cancel
+      const didDonate = result === true || result?.success === true || result?.donated === true;
+      if (didDonate) {
         onSuccess({ firstName: formData.firstName, amount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }

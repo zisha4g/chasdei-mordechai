@@ -25,6 +25,12 @@ supabase/.temp
 .DS_Store
 Thumbs.db
 
+# Large media files (deploy manually to server)
+*.mp4
+*.mov
+*.avi
+*.webm
+
 # Logs
 *.log
 npm-debug.log*

@@ -3,6 +3,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* DonorFuse popup size override */
+.df-popup-container,
+.df-popup-wrapper,
+div[class*="df-popup"] iframe,
+div[id*="df-popup"] iframe,
+iframe[src*="donate.donorfuse.com"] {
+  height: 90vh !important;
+  max-height: 90vh !important;
+  min-height: 600px !important;
+}
+
 /* DonorFuse hosted card field wrappers */
 .df-field-wrap {
   height: 30px;

@@ -2,10 +2,12 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
-import { Heart, ArrowRight } from 'lucide-react';
+import { Heart, ArrowRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = ({ onDonateClick }) => {
+  const navigate = useNavigate();
   return (
     <div className="bg-orange-50/30 pb-20">
       <Helmet>
@@ -69,6 +71,7 @@ const HomePage = ({ onDonateClick }) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.8 }}
+            className="flex flex-col sm:flex-row gap-4 items-center justify-center"
           >
             <Button 
               onClick={() => onDonateClick(120)}
@@ -77,6 +80,15 @@ const HomePage = ({ onDonateClick }) => {
               The Anxiety Is Real - Donate Now
               <ArrowRight className="ml-3 group-hover:translate-x-2 transition-transform" size={24} />
             </Button>
+            <button
+              onClick={() => navigate('/raffle')}
+              className="flex items-center gap-3 text-white border-2 border-white/70 hover:border-white hover:bg-white/10 text-lg font-semibold px-8 py-4 rounded-xl backdrop-blur-sm transition-all duration-300 group"
+            >
+              <span className="w-10 h-10 flex items-center justify-center bg-white/20 group-hover:bg-white/30 rounded-full transition">
+                <Play size={18} className="ml-0.5" fill="white" />
+              </span>
+              Watch &amp; Win $1,000
+            </button>
           </motion.div>
         </div>
       </section>

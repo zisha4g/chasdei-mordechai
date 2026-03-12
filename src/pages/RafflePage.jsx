@@ -1,12 +1,27 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
-import { Gift, PlayCircle, ArrowRight } from 'lucide-react';
+import { Gift, ArrowRight, Lock } from 'lucide-react';
 import { useRaffle } from '@/contexts/RaffleContext';
+
+const VIDEO_SRC = '/images/Chasdei_Mordechai_Shull_background (1) (1).mp4';
+// Fraction of video that must be watched before raffle unlocks (0.5 = 50%)
+const WATCH_THRESHOLD = 0.5;
 
 const RafflePage = () => {
   const { openRaffle } = useRaffle();
+  const videoRef = useRef(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleTimeUpdate = () => {
+    const vid = videoRef.current;
+    if (!vid || unlocked) return;
+    const pct = vid.currentTime / vid.duration;
+    setProgress(pct);
+    if (pct >= WATCH_THRESHOLD) setUnlocked(true);
+  };
 
   return (
     <>
@@ -20,42 +35,66 @@ const RafflePage = () => {
 
       <div className="min-h-screen bg-[#fdfbf7] py-12 pt-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-          
+
           {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">See The Impact. <span className="text-primary">Win $1,000.</span></h1>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+              See The Impact. <span className="text-primary">Win $1,000.</span>
+            </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Watch how your support transforms lives, then enter our exclusive community raffle as our way of saying thank you.
+              Watch the story below — then unlock your free raffle entry.
             </p>
           </div>
 
           {/* Video Section */}
-          <section className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-16 border border-gray-100">
-            <div className="relative w-full aspect-video bg-gray-900 group cursor-pointer">
-              <img 
-                src="https://ahblicklive.com/new_ded_img/26/06/medium/Is9Tw2qZObkiXl0SPk1/aH0coQ7_wide_m.png" 
-                alt="Community impact video" 
-                className="w-full h-full object-cover opacity-70 group-hover:opacity-50 transition-opacity duration-300"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <PlayCircle className="w-20 h-20 text-white/90 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                <span className="mt-4 text-sm font-bold tracking-widest text-white uppercase drop-shadow-md">Watch Our Story</span>
+          <section className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-10 border border-gray-100">
+            <video
+              ref={videoRef}
+              src={VIDEO_SRC}
+              controls
+              onTimeUpdate={handleTimeUpdate}
+              className="w-full aspect-video bg-black object-contain"
+            />
+
+            {/* Progress bar */}
+            {!unlocked && (
+              <div className="px-8 pt-4 pb-2">
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Watch progress</span>
+                  <span>{Math.round(progress * 100)}% / 50% needed to unlock</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-2 bg-amber-500 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(progress * 100 / WATCH_THRESHOLD, 100)}%` }}
+                  />
+                </div>
               </div>
-            </div>
-            
+            )}
+
             <div className="p-8 text-center bg-gradient-to-b from-white to-gray-50">
               <Gift className="mx-auto text-accent mb-4" size={48} />
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Watch and Enter to Win $1000!</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Watch and Enter to Win $1,000!</h2>
               <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                Your awareness is the first step to helping families in our community. Enter your details below for a chance to win our grand prize.
+                {unlocked
+                  ? "You've watched enough — you're eligible to enter! Click below."
+                  : 'Watch at least half the video to unlock your free raffle entry.'}
               </p>
-              <Button 
-                onClick={openRaffle}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xl px-12 py-8 rounded-xl shadow-lg hover:scale-105 transition-all"
-              >
-                ENTER THE RAFFLE NOW
-                <ArrowRight className="ml-2" size={24} />
-              </Button>
+
+              {unlocked ? (
+                <Button
+                  onClick={openRaffle}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xl px-12 py-8 rounded-xl shadow-lg hover:scale-105 transition-all"
+                >
+                  ENTER THE RAFFLE NOW
+                  <ArrowRight className="ml-2" size={24} />
+                </Button>
+              ) : (
+                <div className="inline-flex items-center gap-3 bg-gray-100 text-gray-400 font-bold text-xl px-12 py-5 rounded-xl cursor-not-allowed select-none">
+                  <Lock size={20} />
+                  Watch to Unlock Entry
+                </div>
+              )}
             </div>
           </section>
 
@@ -76,7 +115,7 @@ const RafflePage = () => {
                 How it Works
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Simply click the button above, enter your contact information, and you're automatically entered. Winners will be contacted directly via email and phone. No donation is strictly required to enter.
+                Watch the video above, then click the button to enter your details. Winners will be contacted directly via email and phone. No donation required to enter.
               </p>
             </div>
           </div>
