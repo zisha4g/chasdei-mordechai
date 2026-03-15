@@ -1,27 +1,38 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
 import { Gift, ArrowRight, Lock } from 'lucide-react';
 import { useRaffle } from '@/contexts/RaffleContext';
 
-const VIDEO_SRC = '/images/Chasdei_Mordechai_Shull_background (1) (1).mp4';
+const VIMEO_ID = '1173352905';
 // Fraction of video that must be watched before raffle unlocks (0.5 = 50%)
 const WATCH_THRESHOLD = 0.5;
 
 const RafflePage = () => {
   const { openRaffle } = useRaffle();
-  const videoRef = useRef(null);
+  const iframeRef = useRef(null);
   const [unlocked, setUnlocked] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const handleTimeUpdate = () => {
-    const vid = videoRef.current;
-    if (!vid || unlocked) return;
-    const pct = vid.currentTime / vid.duration;
-    setProgress(pct);
-    if (pct >= WATCH_THRESHOLD) setUnlocked(true);
-  };
+  useEffect(() => {
+    // Load Vimeo Player API script dynamically
+    const existing = document.getElementById('vimeo-player-api');
+    const init = () => {
+      if (!iframeRef.current || !window.Vimeo) return;
+      const player = new window.Vimeo.Player(iframeRef.current);
+      player.on('timeupdate', (data) => {
+        setProgress(data.percent);
+        if (data.percent >= WATCH_THRESHOLD) setUnlocked(true);
+      });
+    };
+    if (existing) { init(); return; }
+    const script = document.createElement('script');
+    script.id = 'vimeo-player-api';
+    script.src = 'https://player.vimeo.com/api/player.js';
+    script.onload = init;
+    document.body.appendChild(script);
+  }, []);
 
   return (
     <>
@@ -48,13 +59,16 @@ const RafflePage = () => {
 
           {/* Video Section */}
           <section className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-10 border border-gray-100">
-            <video
-              ref={videoRef}
-              src={VIDEO_SRC}
-              controls
-              onTimeUpdate={handleTimeUpdate}
-              className="w-full aspect-video bg-black object-contain"
-            />
+            <div className="w-full aspect-video">
+              <iframe
+                ref={iframeRef}
+                src={`https://player.vimeo.com/video/${VIMEO_ID}?title=0&byline=0&portrait=0`}
+                className="w-full h-full border-0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                title="Chasdei Mordechai Story"
+              />
+            </div>
 
             {/* Progress bar */}
             {!unlocked && (
