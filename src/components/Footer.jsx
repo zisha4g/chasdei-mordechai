@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Linkedin, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 const Footer = () => {
   const quickLinks = [
@@ -11,17 +11,10 @@ const Footer = () => {
     { name: 'Raffle', path: '/raffle' },
   ];
 
-  const socialLinks = [
-    { name: 'Facebook', icon: Facebook, url: '#' },
-    { name: 'Twitter', icon: Twitter, url: '#' },
-    { name: 'Instagram', icon: Instagram, url: '#' },
-    { name: 'LinkedIn', icon: Linkedin, url: '#' },
-  ];
-
   return (
     <footer className="bg-gray-900 text-gray-300 border-t border-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Organization Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2 text-white">
@@ -49,26 +42,6 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
-
-          {/* Social Media */}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-6">Connect With Us</h3>
-            <div className="flex space-x-4">
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.name}
-                    href={social.url}
-                    className="p-3 rounded-full bg-gray-800 text-gray-400 hover:bg-primary hover:text-white transition-all duration-300 hover:-translate-y-1"
-                    aria-label={social.name}
-                  >
-                    <Icon size={20} />
-                  </a>
-                );
-              })}
-            </div>
           </div>
         </div>
 

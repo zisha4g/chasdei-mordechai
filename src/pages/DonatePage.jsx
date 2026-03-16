@@ -16,31 +16,33 @@ const DonatePage = ({ onDonateClick }) => {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: 'url(/images/1009.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 40%',
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]"></div>
-        </div>
-        
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl mx-auto drop-shadow-lg">
-            Shabbos Is Coming.<br />Her Fridge Is Empty.
-          </h1>
-          <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto font-medium">
-            Hashem placed this moment in your hands. You are the power to say YES.
-          </p>
-          <Button 
-            onClick={() => onDonateClick(60)}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-lg px-10 py-6 rounded-full shadow-lg hover:scale-105 transition-transform"
-          >
-            Donate Now
-          </Button>
+      <section className="bg-white border-b border-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
+          {/* Image — full portrait photo, no cropping */}
+          <div className="flex items-center justify-center bg-gray-50 py-8 px-6">
+            <img
+              src="/images/1012.png"
+              alt="Children by empty fridge"
+              className="max-h-[500px] w-auto object-contain"
+            />
+          </div>
+          {/* Text — vertically centered */}
+          <div className="flex flex-col items-center justify-center text-center px-10 py-16 bg-white">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Shabbos Is Coming.<br />
+              <span className="text-primary">Her Fridge Is Empty.</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-lg leading-relaxed font-medium">
+              Hashem placed this moment in your hands.<br />
+              You are the power to say <strong className="text-gray-900">YES.</strong>
+            </p>
+            <Button
+              onClick={() => onDonateClick(60)}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xl px-14 py-7 rounded-full shadow-xl hover:scale-105 transition-transform"
+            >
+              Donate Now
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -157,8 +159,8 @@ const DonatePage = ({ onDonateClick }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
               <img
-                src="/images/1010.png"
-                alt="Children sitting at an empty table"
+                src="/images/1011.png"
+                alt="Children eating potato chips"
                 className="w-full h-[400px] object-cover"
               />
             </div>

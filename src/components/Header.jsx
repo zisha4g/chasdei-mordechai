@@ -37,9 +37,7 @@ const Header = ({ onDonateClick }) => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="bg-primary p-2 rounded-lg text-white group-hover:bg-primary/90 transition-colors">
-              <Heart size={24} fill="currentColor" />
-            </div>
+            <img src="/images/logo.png" alt="Chasdei Mordechai" className="h-10 w-auto" />
             <span className="text-2xl font-bold text-gray-900 tracking-tight">Chasdei Mordechai</span>
           </Link>
 
@@ -77,6 +75,16 @@ const Header = ({ onDonateClick }) => {
               }`}
             >
               Donate
+            </Link>
+            <Link
+              to="/contact"
+              className={`text-sm font-semibold uppercase tracking-wider transition-colors duration-200 ${
+                location.pathname === '/contact'
+                  ? 'text-primary'
+                  : 'text-gray-600 hover:text-primary'
+              }`}
+            >
+              Contact
             </Link>
             <Button 
               onClick={() => onDonateClick(60)}

@@ -2,18 +2,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
-import { Gift, ArrowRight, Lock } from 'lucide-react';
+import { Gift, ArrowRight, Lock, X } from 'lucide-react';
 import { useRaffle } from '@/contexts/RaffleContext';
 
 const VIMEO_ID = '1173352905';
 // Fraction of video that must be watched before raffle unlocks (0.5 = 50%)
 const WATCH_THRESHOLD = 0.5;
 
-const RafflePage = () => {
+const RafflePage = ({ onDonateClick }) => {
   const { openRaffle } = useRaffle();
   const iframeRef = useRef(null);
   const [unlocked, setUnlocked] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showDonatePrompt, setShowDonatePrompt] = useState(false);
 
   useEffect(() => {
     // Load Vimeo Player API script dynamically
@@ -25,6 +26,10 @@ const RafflePage = () => {
         setProgress(data.percent);
         if (data.percent >= WATCH_THRESHOLD) setUnlocked(true);
       });
+      player.on('ended', () => {
+        setUnlocked(true);
+        setShowDonatePrompt(true);
+      });
     };
     if (existing) { init(); return; }
     const script = document.createElement('script');
@@ -33,6 +38,16 @@ const RafflePage = () => {
     script.onload = init;
     document.body.appendChild(script);
   }, []);
+
+  const handleDonate = () => {
+    setShowDonatePrompt(false);
+    if (onDonateClick) onDonateClick(60);
+  };
+
+  const handleSkipToDonate = () => {
+    setShowDonatePrompt(false);
+    openRaffle();
+  };
 
   return (
     <>
@@ -45,6 +60,44 @@ const RafflePage = () => {
       </Helmet>
 
       <div className="min-h-screen bg-[#fdfbf7] py-12 pt-24">
+
+        {/* Video-end donate prompt modal */}
+        {showDonatePrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-10 text-center relative">
+              <button
+                onClick={() => setShowDonatePrompt(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={22} />
+              </button>
+
+              <div className="text-7xl mb-4">☕</div>
+              <h2 className="text-3xl font-extrabold text-gray-900 mb-3 leading-tight">
+                You've seen the story.<br />
+                <span className="text-primary">Now make a difference.</span>
+              </h2>
+              <p className="text-gray-600 text-lg mb-8">
+                A family is waiting for Shabbos. One donation can fill that fridge.
+                Will you be the one to say yes?
+              </p>
+
+              <Button
+                onClick={handleDonate}
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xl py-6 rounded-xl shadow-lg hover:scale-105 transition-all mb-4"
+              >
+                Yes, I Want to Donate 💛
+              </Button>
+
+              <button
+                onClick={handleSkipToDonate}
+                className="text-gray-400 hover:text-gray-600 text-sm underline underline-offset-2 transition-colors"
+              >
+                No thanks, just enter the raffle
+              </button>
+            </div>
+          </div>
+        )}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
 
           {/* Header */}

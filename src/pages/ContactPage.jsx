@@ -3,63 +3,91 @@ import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+
+// ── EmailJS config ──────────────────────────────────────────────
+// 1. Sign up free at https://www.emailjs.com
+// 2. Add Email Service (Gmail) → copy Service ID
+// 3. Create Email Template → copy Template ID
+// 4. Go to Account → API Keys → copy Public Key
+// 5. Replace the three values below
+const EMAILJS_SERVICE_ID  = 'service_c77b33i';
+const EMAILJS_TEMPLATE_ID = 'template_6jed4ri';
+const EMAILJS_PUBLIC_KEY  = '187A-6-PkbbJk207H';
+// ────────────────────────────────────────────────────────────────
 
 const ContactPage = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    subject: '',
     message: '',
   });
+  const [sending, setSending] = useState(false);
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for your message! We'll get back to you soon.",
-      duration: 5000,
-    });
-
-    setFormData({
-      name: '',
-      email: '',
-      message: '',
-    });
+    setSending(true);
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          name:    formData.name,
+          email:   formData.email,
+          title:   formData.subject || `Message from ${formData.name}`,
+          message: formData.message,
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      toast({
+        title: 'Message sent!',
+        description: "We received your message and will get back to you soon.",
+        duration: 5000,
+      });
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      toast({
+        title: 'Could not send message',
+        description: 'Please email us directly at office@chasdeimordechai.org',
+        variant: 'destructive',
+        duration: 6000,
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const contactInfo = [
     {
       icon: Mail,
       label: 'Email',
-      value: 'contact@ourorg.org',
+      value: 'office@chasdeimordechai.org',
     },
     {
       icon: Phone,
       label: 'Phone',
-      value: '(555) 123-4567',
+      value: '(845) 474-8585',
     },
     {
       icon: MapPin,
       label: 'Address',
-      value: '123 Community St, City, State 12345',
+      value: '35 Ashel Ln, Monsey NY 10952',
     },
   ];
 
   return (
     <>
       <Helmet>
-        <title>Contact Us - OurOrg | Get in Touch</title>
+        <title>Contact Us | Chasdei Mordechai</title>
         <meta
           name="description"
-          content="Get in touch with OurOrg. Send us a message, give us a call, or visit our office. We're here to answer your questions and hear from you."
+          content="Get in touch with Chasdei Mordechai. Send us a message, give us a call, or reach out by email. We'd love to hear from you."
         />
       </Helmet>
 
@@ -69,7 +97,8 @@ const ContactPage = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Get In Touch</h1>
             <p className="text-lg text-gray-600">
-              We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+              Have a question, want to volunteer, or just want to say hello?<br />
+              We'd love to hear from you.
             </p>
           </div>
 
@@ -127,6 +156,21 @@ const ContactPage = () => {
                 </div>
 
                 <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 bg-white"
+                    placeholder="What is this about?"
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                   </label>
@@ -158,9 +202,9 @@ const ContactPage = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3">
+                <Button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3">
                   <Send className="mr-2" size={18} />
-                  Send Message
+                  {sending ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </section>
