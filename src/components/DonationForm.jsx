@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { X, Heart, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-
-// ── DonorFuse donation link and campaign ID
-const DF_LINK = 'cm';  // URL slug from https://donate.donorfuse.com/cm
-const DF_CAMPAIGN_ID = 11426; // $1,000 Raffle 3
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
   const [amount, setAmount] = useState(initialAmount || 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -52,8 +50,8 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
     const phone = rawPhone ? (rawPhone.startsWith('1') ? rawPhone : `1${rawPhone}`) : undefined;
 
     const options = {
-      link: DF_LINK,
-      campaign: DF_CAMPAIGN_ID,
+      link: settings.donorFuseLink,
+      campaign: settings.donorFuseCampaignId,
       amount,
       firstName: formData.firstName,
       lastName: formData.lastName || undefined,

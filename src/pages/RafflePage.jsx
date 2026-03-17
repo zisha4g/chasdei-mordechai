@@ -4,19 +4,30 @@ import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
 import { Gift, ArrowRight, Lock, X } from 'lucide-react';
 import { useRaffle } from '@/contexts/RaffleContext';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
-const VIMEO_ID = '1173352905';
 // Fraction of video that must be watched before raffle unlocks (0.5 = 50%)
 const WATCH_THRESHOLD = 0.5;
 
 const RafflePage = ({ onDonateClick }) => {
   const { openRaffle } = useRaffle();
+  const { settings } = useSiteSettings();
   const iframeRef = useRef(null);
   const [unlocked, setUnlocked] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showDonatePrompt, setShowDonatePrompt] = useState(false);
+  const isTrackableVimeo = Boolean(settings.vimeoId);
 
   useEffect(() => {
+    if (!isTrackableVimeo) {
+      setUnlocked(true);
+      setProgress(1);
+      return;
+    }
+
+    setUnlocked(false);
+    setProgress(0);
+
     // Load Vimeo Player API script dynamically
     const existing = document.getElementById('vimeo-player-api');
     const init = () => {
@@ -37,7 +48,7 @@ const RafflePage = ({ onDonateClick }) => {
     script.src = 'https://player.vimeo.com/api/player.js';
     script.onload = init;
     document.body.appendChild(script);
-  }, []);
+  }, [isTrackableVimeo, settings.vimeoId]);
 
   const handleDonate = () => {
     setShowDonatePrompt(false);
@@ -115,7 +126,7 @@ const RafflePage = ({ onDonateClick }) => {
             <div className="w-full aspect-video">
               <iframe
                 ref={iframeRef}
-                src={`https://player.vimeo.com/video/${VIMEO_ID}?title=0&byline=0&portrait=0`}
+                src={settings.videoEmbedUrl}
                 className="w-full h-full border-0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen

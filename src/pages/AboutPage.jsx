@@ -2,11 +2,11 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, ArrowRight } from 'lucide-react';
-import { useRaffle } from '@/contexts/RaffleContext';
+import { ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const AboutPage = ({ onDonateClick }) => {
-  const { openRaffle } = useRaffle();
+  const { settings } = useSiteSettings();
 
   return (
     <div className="bg-white pb-20 pt-24">
@@ -95,20 +95,15 @@ const AboutPage = ({ onDonateClick }) => {
       <section id="video-section" className="py-24 bg-gray-900 text-white">
         <div className="container mx-auto px-4 max-w-5xl">
           
-          {/* Video Placeholder */}
-          <div 
-            onClick={openRaffle}
-            className="relative w-full aspect-video bg-gray-800 rounded-2xl overflow-hidden shadow-2xl mb-16 border border-gray-700 group cursor-pointer"
-          >
-            <img 
-              src="/images/1002.png" 
-              alt="Children enjoying Shabbos meal"
-              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-60 transition-opacity" 
+          {/* Video Embed */}
+          <div className="relative w-full aspect-video bg-gray-800 rounded-2xl overflow-hidden shadow-2xl mb-16 border border-gray-700">
+            <iframe
+              src={settings.videoEmbedUrl}
+              title="Watch Mendy's Story"
+              className="w-full h-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <PlayCircle className="w-20 h-20 text-white/90 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-              <span className="mt-4 text-sm font-medium tracking-widest text-white/90 uppercase drop-shadow-md">Watch Mendy's Story & Enter Raffle</span>
-            </div>
           </div>
 
           {/* Script Text */}

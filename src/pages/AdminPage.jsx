@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Settings, X } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
+import { DEFAULT_SITE_SETTINGS } from '@/hooks/useSiteSettings';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function downloadCSV(rows) {
@@ -22,6 +24,198 @@ function downloadCSV(rows) {
 }
 
 const EMPTY_FORM = { first_name: '', last_name: '', email: '', phone: '', amount: '' };
+
+const EMPTY_SETTINGS_FORM = {
+  video_url: DEFAULT_SITE_SETTINGS.videoUrl,
+  donorfuse_campaign_id: String(DEFAULT_SITE_SETTINGS.donorFuseCampaignId),
+  donorfuse_link: DEFAULT_SITE_SETTINGS.donorFuseLink,
+};
+
+function SiteSettingsModal({ isOpen, onClose }) {
+  const [settingsId, setSettingsId] = useState(null);
+  const [form, setForm] = useState({ ...EMPTY_SETTINGS_FORM });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    const { data, error: err } = await supabase
+      .from('site_settings')
+      .select('id, video_url, donorfuse_campaign_id, donorfuse_link')
+      .limit(1);
+
+    setLoading(false);
+
+    if (err) {
+      setError(err.message);
+      return;
+    }
+
+    const row = data?.[0];
+    if (!row) {
+      setSettingsId(null);
+      setForm({ ...EMPTY_SETTINGS_FORM });
+      return;
+    }
+
+    setSettingsId(row.id ?? null);
+    setForm({
+      video_url: row.video_url || EMPTY_SETTINGS_FORM.video_url,
+      donorfuse_campaign_id: String(row.donorfuse_campaign_id ?? EMPTY_SETTINGS_FORM.donorfuse_campaign_id),
+      donorfuse_link: row.donorfuse_link || EMPTY_SETTINGS_FORM.donorfuse_link,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) loadSettings();
+  }, [isOpen, loadSettings]);
+
+  const updateField = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    setError('');
+    setSuccess('');
+  };
+
+  const saveSettings = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    const campaignId = Number(String(form.donorfuse_campaign_id).trim());
+    if (!Number.isFinite(campaignId) || campaignId <= 0) {
+      setSaving(false);
+      setError('Campaign ID must be a positive number.');
+      return;
+    }
+
+    const payload = {
+      video_url: form.video_url.trim(),
+      donorfuse_campaign_id: campaignId,
+      donorfuse_link: form.donorfuse_link.trim(),
+    };
+
+    let err;
+
+    if (settingsId) {
+      ({ error: err } = await supabase.from('site_settings').update(payload).eq('id', settingsId));
+    } else {
+      const { data, error: insertErr } = await supabase
+        .from('site_settings')
+        .insert(payload)
+        .select('id')
+        .single();
+      err = insertErr;
+      if (!insertErr) setSettingsId(data?.id ?? null);
+    }
+
+    setSaving(false);
+
+    if (err) {
+      setError(err.message);
+      return;
+    }
+
+    setSuccess('Settings saved. The public site will use the new values on reload.');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 p-4 sm:p-6">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">Site Settings</h2>
+            <p className="text-xs text-gray-400">Update the video link and DonorFuse settings without changing code.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={loadSettings}
+              type="button"
+              className="border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs px-3 py-1.5 rounded-lg transition"
+            >
+              Refresh Settings
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-sm text-gray-400">Loading settings…</div>
+          ) : (
+            <form onSubmit={saveSettings} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Video URL or Vimeo ID</label>
+                <input
+                  value={form.video_url}
+                  onChange={updateField('video_url')}
+                  placeholder="https://vimeo.com/1173352905"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">DonorFuse Campaign ID</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={form.donorfuse_campaign_id}
+                  onChange={updateField('donorfuse_campaign_id')}
+                  placeholder="11426"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">DonorFuse Link Slug</label>
+                <input
+                  value={form.donorfuse_link}
+                  onChange={updateField('donorfuse_link')}
+                  placeholder="cm"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {success && <p className="text-green-600 text-sm">{success}</p>}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm px-4 py-2 rounded-lg transition"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save Settings'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Login screen ──────────────────────────────────────────────────────────────
 function LoginScreen() {
@@ -151,6 +345,7 @@ function EntryModal({ entry, onClose, onSaved }) {
 
 // ── Main admin panel ──────────────────────────────────────────────────────────
 function AdminPanel({ onLogout }) {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -214,7 +409,17 @@ function AdminPanel({ onLogout }) {
           <h1 className="text-xl font-bold text-gray-800">Chasdei Mordechai — Admin</h1>
           <p className="text-xs text-gray-400">Raffle Entries</p>
         </div>
-        <button onClick={onLogout} className="text-xs text-gray-400 hover:text-gray-700 transition">Logout</button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition"
+            title="Site Settings"
+            aria-label="Open site settings"
+          >
+            <Settings size={18} />
+          </button>
+          <button onClick={onLogout} className="text-xs text-gray-400 hover:text-gray-700 transition">Logout</button>
+        </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -336,6 +541,8 @@ function AdminPanel({ onLogout }) {
           </div>
         </div>
       )}
+
+      <SiteSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
