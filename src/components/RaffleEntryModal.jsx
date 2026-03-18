@@ -6,6 +6,15 @@ import { useToast } from '@/components/ui/use-toast';
 import { useRaffle } from '@/contexts/RaffleContext';
 import { supabase } from '@/lib/customSupabaseClient';
 
+const buildFullAddress = ({ addressLine1, city, state, postalCode }) => {
+  const street = addressLine1.trim();
+  const locality = city.trim();
+  const region = state.trim();
+  const zip = postalCode.trim();
+
+  return `${street}, ${locality}, ${region} ${zip}`;
+};
+
 const RaffleEntryModal = () => {
   const { isOpen, closeRaffle } = useRaffle();
   const { toast } = useToast();
@@ -15,7 +24,10 @@ const RaffleEntryModal = () => {
     lastName: '',
     email: '',
     phone: '',
-    address: '',
+    addressLine1: '',
+    city: '',
+    state: '',
+    postalCode: '',
   });
 
   if (!isOpen) return null;
@@ -26,11 +38,13 @@ const RaffleEntryModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const fullAddress = buildFullAddress(formData);
     
-    if (!formData.firstName || !formData.email || !formData.address.trim()) {
+    if (!formData.firstName || !formData.email || !formData.addressLine1.trim() || !formData.city.trim() || !formData.state.trim() || !formData.postalCode.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please provide your first name, email, and address.",
+        description: "Please provide your first name, email, street address, city, state, and ZIP code.",
         variant: "destructive",
       });
       return;
@@ -46,7 +60,7 @@ const RaffleEntryModal = () => {
           last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          address: formData.address.trim(),
+          address: fullAddress,
         });
 
       if (error) throw error;
@@ -56,7 +70,16 @@ const RaffleEntryModal = () => {
         description: "You're entered to win $1000!",
       });
 
-      setFormData({ firstName: '', lastName: '', email: '', phone: '', address: '' });
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        addressLine1: '',
+        city: '',
+        state: '',
+        postalCode: '',
+      });
       closeRaffle();
     } catch (error) {
       console.error('Error submitting raffle:', error);
@@ -72,7 +95,7 @@ const RaffleEntryModal = () => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative animate-in zoom-in-95 duration-300 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl relative animate-in zoom-in-95 duration-300 overflow-hidden">
         <div className="bg-primary p-6 text-center text-white relative">
           <button 
             onClick={closeRaffle}
@@ -138,16 +161,59 @@ const RaffleEntryModal = () => {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="raffle-address" className="text-sm font-medium text-gray-700">Address *</label>
+            <label htmlFor="raffle-addressLine1" className="text-sm font-medium text-gray-700">Street Address *</label>
             <input
-              id="raffle-address"
-              name="address"
-              value={formData.address}
+              id="raffle-addressLine1"
+              name="addressLine1"
+              value={formData.addressLine1}
               onChange={handleInputChange}
-              autoComplete="street-address"
+              autoComplete="address-line1"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              placeholder="123 Main St"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.2fr)_minmax(110px,0.7fr)_minmax(120px,0.8fr)] gap-4">
+            <div className="space-y-1">
+              <label htmlFor="raffle-city" className="text-sm font-medium text-gray-700">City *</label>
+              <input
+                id="raffle-city"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                autoComplete="address-level2"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="raffle-state" className="text-sm font-medium text-gray-700">State *</label>
+              <input
+                id="raffle-state"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                autoComplete="address-level1"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                maxLength={30}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="raffle-postalCode" className="text-sm font-medium text-gray-700">ZIP Code *</label>
+              <input
+                id="raffle-postalCode"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleInputChange}
+                autoComplete="postal-code"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                minLength={5}
+                maxLength={12}
+                required
+              />
+            </div>
           </div>
 
           <Button 

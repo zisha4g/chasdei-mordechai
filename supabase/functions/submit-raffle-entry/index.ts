@@ -7,6 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const buildFullAddress = (addressLine1: string, city: string, state: string, postalCode: string) => {
+  const street = addressLine1.trim()
+  const locality = city.trim()
+  const region = state.trim()
+  const zip = postalCode.trim()
+
+  return `${street}, ${locality}, ${region} ${zip}`
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -19,18 +28,34 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { first_name, last_name, email, phone, address } = await req.json()
+    const {
+      first_name,
+      last_name,
+      email,
+      phone,
+      address,
+      address_line_1,
+      city,
+      state,
+      postal_code,
+    } = await req.json()
 
-    if (!first_name || !email || !address) {
+    const fullAddress = String(address || '').trim() || (
+      address_line_1 && city && state && postal_code
+        ? buildFullAddress(address_line_1, city, state, postal_code)
+        : ''
+    )
+
+    if (!first_name || !email || !fullAddress) {
       return new Response(
-        JSON.stringify({ success: false, error: 'First name, email, and address are required.' }),
+        JSON.stringify({ success: false, error: 'First name, email, street address, city, state, and ZIP code are required.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const { error } = await supabaseClient
       .from('raffle_entries')
-      .insert({ first_name, last_name, email, phone, address })
+      .insert({ first_name, last_name, email, phone, address: fullAddress })
 
     if (error) throw error
 
@@ -45,10 +70,3 @@ serve(async (req) => {
     )
   }
 })
-*** Add File: c:\Users\Zisha\Downloads\casday mordchay\supabase\migrations\20260318_add_address_to_raffle_entries.sql
-alter table public.raffle_entries
-add column if not exists address text;
-
-update public.raffle_entries
-set address = coalesce(nullif(trim(address), ''), 'Address not provided')
-where address is null;
