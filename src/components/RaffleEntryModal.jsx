@@ -15,6 +15,7 @@ const RaffleEntryModal = () => {
     lastName: '',
     email: '',
     phone: '',
+    address: '',
   });
 
   if (!isOpen) return null;
@@ -26,10 +27,10 @@ const RaffleEntryModal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.email) {
+    if (!formData.firstName || !formData.email || !formData.address.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please provide your first name and email.",
+        description: "Please provide your first name, email, and address.",
         variant: "destructive",
       });
       return;
@@ -45,6 +46,7 @@ const RaffleEntryModal = () => {
           last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+          address: formData.address.trim(),
         });
 
       if (error) throw error;
@@ -54,7 +56,7 @@ const RaffleEntryModal = () => {
         description: "You're entered to win $1000!",
       });
 
-      setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+      setFormData({ firstName: '', lastName: '', email: '', phone: '', address: '' });
       closeRaffle();
     } catch (error) {
       console.error('Error submitting raffle:', error);
@@ -132,6 +134,19 @@ const RaffleEntryModal = () => {
               value={formData.phone}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="raffle-address" className="text-sm font-medium text-gray-700">Address *</label>
+            <input
+              id="raffle-address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              autoComplete="street-address"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              required
             />
           </div>
 

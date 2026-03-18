@@ -123,11 +123,11 @@ const RafflePage = ({ onDonateClick }) => {
 
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
-              See The Impact. <span className="text-primary">Win $1,000.</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 max-w-4xl mx-auto leading-tight">
+              She asked a stranger to walk into a grocery store with her. <span className="text-primary">This is why.</span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Watch the story below — then unlock your free raffle entry.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Watch this woman's story, then enter to win $1,000. Entering the raffle requires your address.
             </p>
           </div>
 
@@ -209,7 +209,7 @@ const RafflePage = ({ onDonateClick }) => {
                 How it Works
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Watch the video above, then click the button to enter your details. Winners will be contacted directly via email and phone. No donation required to enter.
+                Watch the video above, then click the button to enter your details and address. Winners will be contacted directly via email and phone. No donation required to enter.
               </p>
             </div>
           </div>

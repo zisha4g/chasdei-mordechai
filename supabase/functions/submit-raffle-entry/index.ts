@@ -19,18 +19,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { first_name, last_name, email, phone } = await req.json()
+    const { first_name, last_name, email, phone, address } = await req.json()
 
-    if (!first_name || !email) {
+    if (!first_name || !email || !address) {
       return new Response(
-        JSON.stringify({ success: false, error: 'First name and email are required.' }),
+        JSON.stringify({ success: false, error: 'First name, email, and address are required.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const { error } = await supabaseClient
       .from('raffle_entries')
-      .insert({ first_name, last_name, email, phone })
+      .insert({ first_name, last_name, email, phone, address })
 
     if (error) throw error
 
@@ -45,3 +45,10 @@ serve(async (req) => {
     )
   }
 })
+*** Add File: c:\Users\Zisha\Downloads\casday mordchay\supabase\migrations\20260318_add_address_to_raffle_entries.sql
+alter table public.raffle_entries
+add column if not exists address text;
+
+update public.raffle_entries
+set address = coalesce(nullif(trim(address), ''), 'Address not provided')
+where address is null;

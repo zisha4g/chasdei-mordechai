@@ -23,7 +23,7 @@ function downloadCSV(rows) {
   URL.revokeObjectURL(url);
 }
 
-const EMPTY_FORM = { first_name: '', last_name: '', email: '', phone: '', amount: '' };
+const EMPTY_FORM = { first_name: '', last_name: '', email: '', phone: '', address: '', amount: '' };
 
 const EMPTY_SETTINGS_FORM = {
   video_url: DEFAULT_SITE_SETTINGS.videoUrl,
@@ -273,7 +273,7 @@ function EntryModal({ entry, onClose, onSaved }) {
   const isEdit = Boolean(entry?.id);
   const [form, setForm] = useState(
     isEdit
-      ? { first_name: entry.first_name || '', last_name: entry.last_name || '', email: entry.email || '', phone: entry.phone || '', amount: entry.amount ?? '' }
+      ? { first_name: entry.first_name || '', last_name: entry.last_name || '', email: entry.email || '', phone: entry.phone || '', address: entry.address || '', amount: entry.amount ?? '' }
       : { ...EMPTY_FORM }
   );
   const [saving, setSaving] = useState(false);
@@ -290,6 +290,7 @@ function EntryModal({ entry, onClose, onSaved }) {
       last_name:  form.last_name.trim()  || null,
       email:      form.email.trim()      || null,
       phone:      form.phone.trim()      || null,
+      address:    form.address.trim()    || null,
       amount:     form.amount !== '' ? Number(form.amount) : null,
     };
     let err;
@@ -308,6 +309,7 @@ function EntryModal({ entry, onClose, onSaved }) {
     { key: 'last_name',  label: 'Last Name' },
     { key: 'email',      label: 'Email', type: 'email' },
     { key: 'phone',      label: 'Phone' },
+    { key: 'address',    label: 'Address' },
     { key: 'amount',     label: 'Donation Amount ($)', type: 'number' },
   ];
 
@@ -381,14 +383,15 @@ function AdminPanel({ onLogout }) {
       String(e.first_name || '').toLowerCase().includes(q) ||
       String(e.last_name  || '').toLowerCase().includes(q) ||
       String(e.email      || '').toLowerCase().includes(q) ||
-      String(e.phone      || '').toLowerCase().includes(q)
+      String(e.phone      || '').toLowerCase().includes(q) ||
+      String(e.address    || '').toLowerCase().includes(q)
     );
   });
 
-  const DISPLAY_COLS = ['first_name', 'last_name', 'email', 'phone', 'amount', 'created_at'];
+  const DISPLAY_COLS = ['first_name', 'last_name', 'email', 'phone', 'address', 'amount', 'created_at'];
   const LABELS = {
     first_name: 'First Name', last_name: 'Last Name', email: 'Email',
-    phone: 'Phone', amount: 'Amount ($)', created_at: 'Date',
+    phone: 'Phone', address: 'Address', amount: 'Amount ($)', created_at: 'Date',
   };
 
   const fmt = (col, val) => {
@@ -426,7 +429,7 @@ function AdminPanel({ onLogout }) {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, phone…"
+            placeholder="Search by name, email, phone, address…"
             className="border rounded-lg px-4 py-2 text-sm flex-1 min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
           <button
