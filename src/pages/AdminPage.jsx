@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, X } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
-import { DEFAULT_SITE_SETTINGS } from '@/hooks/useSiteSettings';
+import { DEFAULT_SITE_SETTINGS, fetchLatestSiteSettings } from '@/hooks/useSiteSettings';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function downloadCSV(rows) {
@@ -44,10 +44,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
     setError('');
     setSuccess('');
 
-    const { data, error: err } = await supabase
-      .from('site_settings')
-      .select('id, video_url, donorfuse_campaign_id, donorfuse_link')
-      .limit(1);
+    const { data, error: err } = await fetchLatestSiteSettings();
 
     setLoading(false);
 
@@ -56,7 +53,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
       return;
     }
 
-    const row = data?.[0];
+    const row = data;
     if (!row) {
       setSettingsId(null);
       setForm({ ...EMPTY_SETTINGS_FORM });

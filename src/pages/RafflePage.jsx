@@ -19,6 +19,16 @@ const RafflePage = ({ onDonateClick }) => {
   const isTrackableVimeo = Boolean(settings.vimeoId);
 
   useEffect(() => {
+    if (!settings.videoEmbedUrl) return;
+
+    console.info('Raffle video source', {
+      provider: settings.videoProvider,
+      videoUrl: settings.videoUrl,
+      embedUrl: settings.videoEmbedUrl,
+    });
+  }, [settings.videoEmbedUrl, settings.videoProvider, settings.videoUrl]);
+
+  useEffect(() => {
     if (!isTrackableVimeo) {
       setUnlocked(true);
       setProgress(1);
@@ -127,6 +137,12 @@ const RafflePage = ({ onDonateClick }) => {
               <iframe
                 ref={iframeRef}
                 src={settings.videoEmbedUrl}
+                onLoad={() => {
+                  console.info('Raffle iframe loaded', {
+                    provider: settings.videoProvider,
+                    embedUrl: settings.videoEmbedUrl,
+                  });
+                }}
                 className="w-full h-full border-0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
