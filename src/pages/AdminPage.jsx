@@ -25,6 +25,16 @@ function downloadCSV(rows) {
 
 const EMPTY_FORM = { first_name: '', last_name: '', email: '', phone: '', address: '', amount: '' };
 
+const COLUMN_WIDTHS = {
+  first_name: 'w-[11%]',
+  last_name: 'w-[11%]',
+  email: 'w-[21%]',
+  phone: 'w-[12%]',
+  address: 'w-[21%]',
+  amount: 'w-[10%]',
+  created_at: 'w-[14%]',
+};
+
 const EMPTY_SETTINGS_FORM = {
   video_url: DEFAULT_SITE_SETTINGS.videoUrl,
   donorfuse_campaign_id: String(DEFAULT_SITE_SETTINGS.donorFuseCampaignId),
@@ -422,7 +432,7 @@ function AdminPanel({ onLogout }) {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-[1440px] mx-auto px-4 py-8">
         {/* Toolbar */}
         <div className="flex flex-wrap gap-3 items-center mb-6">
           <input
@@ -459,7 +469,7 @@ function AdminPanel({ onLogout }) {
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow overflow-x-auto xl:overflow-x-visible">
           {loading ? (
             <div className="flex items-center justify-center py-20 text-gray-400">Loading entries…</div>
           ) : filtered.length === 0 ? (
@@ -467,22 +477,24 @@ function AdminPanel({ onLogout }) {
               {search ? 'No entries match your search.' : 'No raffle entries yet.'}
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm min-w-[1100px] xl:min-w-0">
               <thead>
                 <tr className="border-b bg-gray-50">
                   {DISPLAY_COLS.map((col) => (
-                    <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={col} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 ${COLUMN_WIDTHS[col] || ''} ${col === 'amount' || col === 'created_at' ? 'whitespace-nowrap' : 'whitespace-normal'}`}>
                       {LABELS[col] || col}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Actions</th>
+                  <th className="w-[120px] px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((entry, i) => (
                   <tr key={entry.id} className={`border-b last:border-0 hover:bg-amber-50 transition ${i % 2 === 0 ? '' : 'bg-gray-50/40'}`}>
                     {DISPLAY_COLS.map((col) => (
-                      <td key={col} className="px-4 py-3 whitespace-nowrap text-gray-700">{fmt(col, entry[col])}</td>
+                      <td key={col} className={`px-4 py-3 align-top text-gray-700 ${col === 'amount' || col === 'created_at' ? 'whitespace-nowrap' : 'whitespace-normal break-words'}`}>
+                        {fmt(col, entry[col])}
+                      </td>
                     ))}
                     <td className="px-4 py-3 text-center">
                       <div className="flex gap-2 justify-center">
