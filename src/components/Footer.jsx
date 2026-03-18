@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
 
 const Footer = () => {
   const quickLinks = [
@@ -18,7 +17,7 @@ const Footer = () => {
           {/* Organization Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2 text-white">
-              <Heart size={24} fill="currentColor" className="text-primary" />
+              <img src="/images/logo.png" alt="Chasdei Mordechai" className="h-9 w-auto" />
               <span className="text-2xl font-bold tracking-tight">Chasdei Mordechai</span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
