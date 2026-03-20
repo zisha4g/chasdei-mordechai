@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -29,43 +31,41 @@ iframe[src*="donate.donorfuse.com"] {
   transition: border-color 0.2s;
 }
 .df-field-wrap:focus-within {
-  border-color: hsl(215 60% 30%);
-  box-shadow: 0 0 0 2px hsl(215 60% 30% / 0.2);
+  border-color: hsl(45 77% 69%);
+  box-shadow: 0 0 0 2px hsl(45 77% 69% / 0.24);
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 231 60% 12%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 230 41% 18%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 230 41% 18%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Trustworthy Navy */
-    --primary: 215 60% 30%;
+    --primary: 227 64% 19%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 230 33% 22%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 230 28% 20%;
+    --muted-foreground: 222 16% 76%;
 
-    /* Warm Gold/Orange Accent */
-    --accent: 35 90% 55%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 45 77% 69%;
+    --accent-foreground: 227 64% 19%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 215 60% 30%;
+    --border: 229 28% 28%;
+    --input: 229 28% 28%;
+    --ring: 45 77% 69%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
 
   .dark {
@@ -100,15 +100,73 @@ iframe[src*="donate.donorfuse.com"] {
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    font-family: 'Manrope', 'Segoe UI', 'Roboto', sans-serif;
+    background: #0b123a;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+  }
+
+  .site-page {
+    background: linear-gradient(180deg, #0b123a 0%, #0d1544 100%);
+    color: #f8fafc;
+  }
+
+  .site-shell {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(3, 8, 30, 0.28);
+  }
+
+  .site-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgba(232, 204, 116, 0.24);
+    background: rgba(92, 43, 86, 0.28);
+    color: #efd37a;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
   }
 }
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  background: #0b123a;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+body::-webkit-scrollbar {
+  width: 10px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #091031;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: rgba(232, 204, 116, 0.3);
+  border-radius: 9999px;
 }

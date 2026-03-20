@@ -41,7 +41,7 @@ function App() {
 
         {/* Public site */}
         <Route path="*" element={
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen bg-[#0b123a]">
             <Header onDonateClick={openDonationForm} />
             <main className="flex-grow pt-16 md:pt-20">
               <Routes>

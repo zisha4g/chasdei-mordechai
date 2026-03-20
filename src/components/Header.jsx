@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Heart, Gift } from 'lucide-react';
+import { Menu, X, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Header = ({ onDonateClick }) => {
@@ -30,27 +30,27 @@ const Header = ({ onDonateClick }) => {
   return (
     <header
       className={`fixed top-0 z-40 w-full transition-all duration-300 ${
-        scrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-2' : 'bg-white py-4'
+        scrolled
+          ? 'bg-[#091031]/94 backdrop-blur-xl shadow-[0_12px_40px_rgba(3,8,30,0.35)] py-3'
+          : 'bg-[#091031]/88 backdrop-blur-md py-4'
       }`}
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
             <img src="/images/logo.png" alt="Chasdei Mordechai" className="h-10 w-auto" />
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">Chasdei Mordechai</span>
+            <span className="text-2xl font-bold text-white tracking-tight">Chasdei Mordechai</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-semibold uppercase tracking-wider transition-colors duration-200 ${
+                className={`text-sm font-semibold transition-colors duration-200 ${
                   location.pathname === link.path
-                    ? 'text-primary'
-                    : 'text-gray-600 hover:text-primary'
+                    ? 'text-white'
+                    : 'text-white/88 hover:text-white'
                 }`}
               >
                 {link.name}
@@ -60,35 +60,35 @@ const Header = ({ onDonateClick }) => {
               to="/raffle"
               className={`text-sm font-semibold uppercase tracking-wider transition-colors duration-200 flex items-center gap-1 ${
                 location.pathname === '/raffle'
-                  ? 'text-accent font-bold'
-                  : 'text-accent hover:text-accent/80'
+                  ? 'text-[#efd37a] font-bold'
+                  : 'text-[#efd37a]/80 hover:text-[#efd37a]'
               }`}
             >
               <Gift size={16} /> Raffle
             </Link>
             <Link
               to="/donate"
-              className={`text-sm font-semibold uppercase tracking-wider transition-colors duration-200 ${
+              className={`text-sm font-semibold transition-colors duration-200 ${
                 location.pathname === '/donate'
-                  ? 'text-primary'
-                  : 'text-gray-600 hover:text-primary'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               Donate
             </Link>
             <Link
               to="/contact"
-              className={`text-sm font-semibold uppercase tracking-wider transition-colors duration-200 ${
+              className={`text-sm font-semibold transition-colors duration-200 ${
                 location.pathname === '/contact'
-                  ? 'text-primary'
-                  : 'text-gray-600 hover:text-primary'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               Contact
             </Link>
             <Button 
               onClick={() => onDonateClick(60)}
-              className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-2 shadow-md hover:shadow-lg transition-all"
+              className="rounded-full border border-[#e8cc74] bg-transparent px-6 py-2 text-sm font-extrabold uppercase tracking-[0.08em] text-[#efd37a] hover:bg-[#efd37a] hover:text-[#091031]"
             >
               Donate Now
             </Button>
@@ -96,7 +96,7 @@ const Header = ({ onDonateClick }) => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+            className="md:hidden rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -106,34 +106,40 @@ const Header = ({ onDonateClick }) => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-xl py-4 px-4 flex flex-col space-y-4 animate-in slide-in-from-top-2">
+          <div className="absolute left-0 top-full w-full border-t border-white/10 bg-[#091031]/98 px-4 py-4 shadow-xl animate-in slide-in-from-top-2 md:hidden">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className="text-lg font-medium text-gray-800 hover:text-primary p-2 rounded-md hover:bg-gray-50"
+                className="block rounded-xl px-3 py-3 text-base font-medium text-white/78 transition-colors hover:bg-white/5 hover:text-white"
               >
                 {link.name}
               </Link>
             ))}
             <Link
               to="/raffle"
-              className="text-lg font-medium text-accent hover:text-accent/80 p-2 rounded-md hover:bg-gray-50 flex items-center gap-2"
+              className="flex items-center gap-2 rounded-xl px-3 py-3 text-base font-medium text-[#efd37a] transition-colors hover:bg-white/5"
             >
-              <Gift size={20} /> Win $1000
+              <Gift size={18} /> Win $1000
             </Link>
             <Link
               to="/donate"
-              className="text-lg font-medium text-gray-800 hover:text-primary p-2 rounded-md hover:bg-gray-50"
+              className="block rounded-xl px-3 py-3 text-base font-medium text-white/88 transition-colors hover:bg-white/5 hover:text-white"
             >
               Donate
+            </Link>
+            <Link
+              to="/contact"
+              className="block rounded-xl px-3 py-3 text-base font-medium text-white/88 transition-colors hover:bg-white/5 hover:text-white"
+            >
+              Contact
             </Link>
             <Button 
               onClick={() => {
                 setIsMenuOpen(false);
                 onDonateClick(60);
               }}
-              className="w-full bg-primary hover:bg-primary/90 text-white py-6 text-lg mt-4 shadow-md"
+              className="mt-4 w-full rounded-full border border-[#e8cc74] bg-transparent py-6 text-base font-extrabold uppercase tracking-[0.08em] text-[#efd37a] hover:bg-[#efd37a] hover:text-[#091031]"
             >
               Donate Now
             </Button>

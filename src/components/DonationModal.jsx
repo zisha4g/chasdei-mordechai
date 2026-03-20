@@ -26,10 +26,10 @@ const DonationModal = ({ isOpen, onClose, donorData }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-500">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative animate-in slide-in-from-bottom-8 duration-500">
+      <div className="relative w-full max-h-[90vh] max-w-3xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[#101a4d] text-white shadow-2xl animate-in slide-in-from-bottom-8 duration-500">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-black/20 text-white hover:bg-black/40 rounded-full transition-colors"
+          className="absolute top-4 right-4 z-10 rounded-full bg-black/20 p-2 text-white hover:bg-black/40 transition-colors"
         >
           <X size={20} />
         </button>
@@ -40,11 +40,11 @@ const DonationModal = ({ isOpen, onClose, donorData }) => {
             alt="Happy children at the Shabbos table" 
             className="w-full max-h-[40vh] object-contain"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent flex items-end">
+          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-[#091031]/95 via-[#091031]/45 to-transparent">
             <div className="p-5 sm:p-8 w-full">
               <div className="flex items-center gap-3 mb-2 pr-10">
                 <CheckCircle className="text-green-400" size={32} />
-                <h2 className="text-2xl sm:text-4xl font-bold text-white leading-tight drop-shadow-md break-words">
+                <h2 className="font-display text-3xl sm:text-5xl font-semibold uppercase leading-tight break-words">
                   You did it, <span dir="auto">{donorData.firstName}</span>!
                 </h2>
               </div>
@@ -52,38 +52,38 @@ const DonationModal = ({ isOpen, onClose, donorData }) => {
           </div>
         </div>
 
-        <div className="p-8 space-y-6">
-          <div className="space-y-4 text-gray-700">
-            <p className="text-xl font-medium text-gray-900 leading-relaxed">
+        <div className="space-y-6 p-8">
+          <div className="space-y-4 text-white/88">
+            <p className="text-xl font-medium text-white leading-relaxed">
               You just replaced a father's nightmare with a table full of food and a heart full of hope.
             </p>
-            <p className="italic text-gray-600 border-l-4 border-orange-400 pl-4">
+            <p className="border-l-4 border-[#efd37a] pl-4 italic text-white/85">
               Because of your kindness, Chaim can put his worries aside and sing Zemiros with his children in true simcha.
             </p>
-            <p className="font-semibold text-gray-900">
+            <p className="font-semibold text-white">
               Your gift of <span className="text-primary font-bold">${donorData.amount}</span> was a lifeline — it restored a father's dignity and a family's peace.
             </p>
           </div>
 
-          <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 sm:flex-row">
             <div>
-              <h4 className="font-bold text-gray-900">Don't forget your raffle entry!</h4>
-              <p className="text-sm text-gray-600">As a thank you, you're eligible to win $1,000.</p>
+              <h4 className="font-bold text-white">Don't forget your raffle entry!</h4>
+              <p className="text-sm text-white/58">As a thank you, you're eligible to win $1,000.</p>
             </div>
-            <Button onClick={handleOpenRaffle} className="bg-accent hover:bg-accent/90 text-accent-foreground whitespace-nowrap">
+            <Button onClick={handleOpenRaffle} className="whitespace-nowrap rounded-full bg-[#e8cc74] px-6 text-[#091031] hover:bg-[#f1d989]">
               Enter Raffle Now
             </Button>
           </div>
 
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Join the Family</h3>
-            <p className="text-gray-600 mb-5">
+          <div className="mt-6 border-t border-white/10 pt-6">
+            <h3 className="mb-3 text-xl font-bold text-white">Join the Family</h3>
+            <p className="mb-5 text-white/62">
               Don't let the connection end here. Receive monthly family updates and see exactly how your generosity continues to restore homes, tables, and hearts.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 onClick={handleJoinUpdates}
-                className="flex-1 bg-primary hover:bg-primary/90 text-white py-6 text-lg"
+                className="flex-1 rounded-full bg-[#e8cc74] py-6 text-lg font-extrabold text-[#091031] hover:bg-[#f1d989]"
               >
                 <Mail className="mr-2" size={20} />
                 Join the Family Updates
@@ -91,7 +91,7 @@ const DonationModal = ({ isOpen, onClose, donorData }) => {
               <Button 
                 variant="outline" 
                 onClick={onClose}
-                className="flex-1 py-6 text-lg border-gray-300 text-gray-700 hover:bg-gray-100"
+                className="flex-1 rounded-full border-white/14 bg-transparent py-6 text-lg text-white hover:bg-white/8 hover:text-white"
               >
                 Close
               </Button>
