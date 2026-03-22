@@ -94,18 +94,18 @@ const RaffleEntryModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl relative animate-in zoom-in-95 duration-300 overflow-hidden">
-        <div className="bg-primary p-6 text-center text-white relative">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-[#101a4d] border border-white/10 rounded-2xl shadow-2xl w-full max-w-xl relative animate-in zoom-in-95 duration-300 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="bg-[#0a1239] border-b border-white/10 p-6 text-center text-white relative">
           <button 
             onClick={closeRaffle}
-            className="absolute top-4 right-4 p-1 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 p-1 text-white/60 hover:text-white hover:bg-white/15 rounded-full transition-colors"
           >
             <X size={20} />
           </button>
-          <Gift className="mx-auto mb-3" size={40} />
-          <h2 className="text-2xl font-bold">Win $1,000!</h2>
-          <p className="text-primary-foreground/90 mt-2 text-sm">
+          <Gift className="mx-auto mb-3 text-[#efd37a]" size={40} />
+          <h2 className="text-2xl font-bold text-white">Win $1,000!</h2>
+          <p className="text-white/70 mt-2 text-sm">
             Enter our exclusive raffle as a thank you for your support.
           </p>
         </div>
@@ -113,102 +113,103 @@ const RaffleEntryModal = () => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label htmlFor="raffle-firstName" className="text-sm font-medium text-gray-700">First Name *</label>
+              <label htmlFor="raffle-firstName" className="text-sm font-medium text-white/80">First Name *</label>
               <input
                 id="raffle-firstName"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
                 required
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="raffle-lastName" className="text-sm font-medium text-gray-700">Last Name</label>
+              <label htmlFor="raffle-lastName" className="text-sm font-medium text-white/80">Last Name</label>
               <input
                 id="raffle-lastName"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="raffle-email" className="text-sm font-medium text-gray-700">Email *</label>
+            <label htmlFor="raffle-email" className="text-sm font-medium text-white/80">Email *</label>
             <input
               id="raffle-email"
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
               required
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="raffle-phone" className="text-sm font-medium text-gray-700">Phone</label>
+            <label htmlFor="raffle-phone" className="text-sm font-medium text-white/80">Phone</label>
             <input
               id="raffle-phone"
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="raffle-addressLine1" className="text-sm font-medium text-gray-700">Street Address *</label>
+            <label htmlFor="raffle-addressLine1" className="text-sm font-medium text-white/80">Street Address *</label>
             <input
               id="raffle-addressLine1"
               name="addressLine1"
               value={formData.addressLine1}
               onChange={handleInputChange}
               autoComplete="address-line1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
               placeholder="123 Main St"
               required
             />
+            <p className="text-xs text-white/45 mt-1">We'll use this to mail your check if you win.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1.2fr)_minmax(110px,0.7fr)_minmax(120px,0.8fr)] gap-4">
             <div className="space-y-1">
-              <label htmlFor="raffle-city" className="text-sm font-medium text-gray-700">City *</label>
+              <label htmlFor="raffle-city" className="text-sm font-medium text-white/80">City *</label>
               <input
                 id="raffle-city"
                 name="city"
                 value={formData.city}
                 onChange={handleInputChange}
                 autoComplete="address-level2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
                 required
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="raffle-state" className="text-sm font-medium text-gray-700">State *</label>
+              <label htmlFor="raffle-state" className="text-sm font-medium text-white/80">State *</label>
               <input
                 id="raffle-state"
                 name="state"
                 value={formData.state}
                 onChange={handleInputChange}
                 autoComplete="address-level1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
                 maxLength={30}
                 required
               />
             </div>
             <div className="space-y-1">
-              <label htmlFor="raffle-postalCode" className="text-sm font-medium text-gray-700">ZIP Code *</label>
+              <label htmlFor="raffle-postalCode" className="text-sm font-medium text-white/80">ZIP Code *</label>
               <input
                 id="raffle-postalCode"
                 name="postalCode"
                 value={formData.postalCode}
                 onChange={handleInputChange}
                 autoComplete="postal-code"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+                className="w-full px-3 py-2 border border-white/15 rounded-md bg-white/5 text-white placeholder-white/30 focus:ring-2 focus:ring-[#e8cc74] focus:border-[#e8cc74] focus:outline-none transition-colors"
                 minLength={5}
                 maxLength={12}
                 required
@@ -219,9 +220,9 @@ const RaffleEntryModal = () => {
           <Button 
             type="submit" 
             disabled={isSubmitting}
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold py-6 text-lg mt-4 shadow-lg"
+            className="w-full rounded-full bg-[#e8cc74] py-6 text-lg font-extrabold uppercase tracking-[0.08em] text-[#091031] mt-4 shadow-lg hover:bg-[#f1d989]"
           >
-            {isSubmitting ? 'Entering...' : 'Enter to Win'}
+            {isSubmitting ? 'Entering...' : 'Enter to Win $1,000'}
           </Button>
         </form>
       </div>

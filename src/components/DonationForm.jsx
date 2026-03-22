@@ -164,9 +164,6 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
                 `Continue to Donate $${amount}`
               )}
             </Button>
-            <p className="text-xs text-center text-gray-500">
-              Secure, encrypted payment via DonorFuse. Your card data never touches our servers.
-            </p>
           </form>
         </div>
       </div>

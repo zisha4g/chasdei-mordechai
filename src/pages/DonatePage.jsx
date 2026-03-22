@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
-import { Shield, Lock, ArrowRight, Heart } from 'lucide-react';
+import { ArrowRight, Heart } from 'lucide-react';
 
 const DonatePage = ({ onDonateClick }) => {
   return (
@@ -16,15 +16,15 @@ const DonatePage = ({ onDonateClick }) => {
       </Helmet>
 
       <section className="border-b border-white/10 bg-[#101a4d]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
-          <div className="flex items-center justify-center bg-[#0c143f] py-8 px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[500px]">
+          <div className="flex items-center justify-center bg-[#0c143f] py-8 px-6 min-h-[280px] lg:min-h-full">
             <img
               src="/images/1012.png"
               alt="Children by empty fridge"
               className="max-h-[500px] w-auto object-contain"
             />
           </div>
-          <div className="flex flex-col items-center justify-center text-center px-10 py-16 bg-[#101a4d]">
+          <div className="flex flex-col items-center justify-center text-center px-8 py-16 bg-[#101a4d] lg:px-12">
             <span className="site-eyebrow px-5 py-1.5">Make a Difference</span>
             <h1 className="font-display mt-8 text-5xl md:text-6xl lg:text-7xl font-semibold uppercase text-white mb-6 leading-[0.92]">
               Shabbos Is Coming.<br />
@@ -141,10 +141,6 @@ const DonatePage = ({ onDonateClick }) => {
             >
               YES. I WILL BE THE ANSWER.
             </Button>
-            <div className="flex items-center justify-center space-x-4 text-sm text-white/42">
-              <span className="flex items-center"><Shield className="w-4 h-4 mr-1 text-green-500" /> Secure Processing</span>
-              <span className="flex items-center"><Lock className="w-4 h-4 mr-1 text-white/36" /> 256-bit Encryption</span>
-            </div>
           </div>
         </div>
       </section>

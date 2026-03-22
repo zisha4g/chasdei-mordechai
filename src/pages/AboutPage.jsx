@@ -53,7 +53,7 @@ const AboutPage = ({ onDonateClick }) => {
                 And far too many are struggling just to make ends meet. This isn't "out there." It's right here.
               </p>
             </div>
-            <div className="site-shell p-8 rounded-[2rem] relative overflow-hidden">
+            <div className="rounded-[2rem] relative overflow-hidden p-8 border border-[#a93d58]/50 bg-[rgba(93,39,89,0.30)]">
               <blockquote className="text-xl font-medium text-white italic leading-relaxed relative z-10">
                 "We don't judge. We don't ask unnecessary questions that strip away pride. We see a void, and we fill it. Because that's what family does."
               </blockquote>
@@ -73,7 +73,7 @@ const AboutPage = ({ onDonateClick }) => {
               onClick={() => {
                 document.getElementById('video-section').scrollIntoView({ behavior: 'smooth' });
               }}
-              className="rounded-full border border-white/12 bg-white/5 px-8 py-6 text-lg font-bold text-white hover:bg-white/10"
+              className="rounded-full border border-[#a93d58] bg-[rgba(93,39,89,0.28)] px-8 py-6 text-lg font-bold text-[#efd37a] hover:bg-[rgba(93,39,89,0.44)]"
             >
               SEE THE IMPACT
             </Button>

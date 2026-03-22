@@ -29,17 +29,16 @@ const Header = ({ onDonateClick }) => {
 
   return (
     <header
-      className={`fixed top-0 z-40 w-full transition-all duration-300 ${
+      className={`fixed top-0 z-40 w-full bg-[#091031] transition-all duration-300 ${
         scrolled
-          ? 'bg-[#091031]/94 backdrop-blur-xl shadow-[0_12px_40px_rgba(3,8,30,0.35)] py-3'
-          : 'bg-[#091031]/88 backdrop-blur-md py-4'
+          ? 'shadow-[0_12px_40px_rgba(3,8,30,0.45)] py-3'
+          : 'py-4'
       }`}
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <img src="/images/logo.png" alt="Chasdei Mordechai" className="h-10 w-auto" />
-            <span className="text-2xl font-bold text-white tracking-tight">Chasdei Mordechai</span>
+          <Link to="/" className="flex items-center group">
+            <span className="font-display text-2xl font-bold uppercase tracking-tight text-white">Chasdei <span className="text-[#efd37a]">Mordechai</span></span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -96,7 +95,7 @@ const Header = ({ onDonateClick }) => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            className="md:hidden rounded-full p-2 text-white transition-colors hover:bg-white/10"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -106,12 +105,12 @@ const Header = ({ onDonateClick }) => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="absolute left-0 top-full w-full border-t border-white/10 bg-[#091031]/98 px-4 py-4 shadow-xl animate-in slide-in-from-top-2 md:hidden">
+          <div className="absolute left-0 top-full w-full border-t border-white/10 bg-[#091031] px-4 py-4 shadow-xl md:hidden">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className="block rounded-xl px-3 py-3 text-base font-medium text-white/78 transition-colors hover:bg-white/5 hover:text-white"
+                className="block rounded-xl px-3 py-3 text-base font-semibold text-white transition-colors hover:bg-white/8 hover:text-white"
               >
                 {link.name}
               </Link>
