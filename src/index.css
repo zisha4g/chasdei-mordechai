@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -107,20 +107,22 @@ iframe[src*="donate.donorfuse.com"] {
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Manrope', 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Inter', sans-serif;
     background: #0b123a;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 }
 
 @layer components {
   .font-display {
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-family: 'Bebas Neue', 'Arial Narrow', sans-serif;
   }
 
   .site-page {
-    background: linear-gradient(180deg, #0b123a 0%, #0d1544 100%);
+    background: #0B1A4F;
     color: #f8fafc;
   }
 
@@ -133,16 +135,17 @@ iframe[src*="donate.donorfuse.com"] {
   .site-eyebrow {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 9999px;
-    border: 1px solid rgba(232, 204, 116, 0.24);
-    background: rgba(92, 43, 86, 0.28);
-    color: #efd37a;
-    font-family: 'Manrope', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.24em;
+    gap: 0.5rem;
+    border-radius: 100px;
+    border: 1px solid rgba(242, 223, 168, 0.27);
+    background: rgba(242, 223, 168, 0.09);
+    color: #F2DFA8;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
+    padding: 0.4rem 1.1rem;
   }
 }
 

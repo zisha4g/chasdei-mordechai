@@ -98,13 +98,14 @@ const normalizeSettings = (row) => {
       ? donorFuseCampaignId
       : DEFAULT_SITE_SETTINGS.donorFuseCampaignId,
     donorFuseLink: normalizeDonorFuseLink(row?.donorfuse_link),
+    lookerStudioUrl: String(row?.looker_studio_url || '').trim(),
   };
 };
 
 export const fetchLatestSiteSettings = () => (
   supabase
     .from('site_settings')
-    .select('id, video_url, donorfuse_campaign_id, donorfuse_link')
+    .select('id, video_url, donorfuse_campaign_id, donorfuse_link, looker_studio_url')
     .order('id', { ascending: false })
     .limit(1)
     .maybeSingle()

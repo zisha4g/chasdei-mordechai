@@ -4,10 +4,11 @@ import { X, Heart, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { trackDonateOpen, trackDonationCompleted } from '@/lib/analytics';
 
 const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   const { toast } = useToast();
-  const { settings } = useSiteSettings();
+  const { settings, refresh } = useSiteSettings();
   const [amount, setAmount] = useState(initialAmount || 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +21,10 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   useEffect(() => {
     if (initialAmount) setAmount(initialAmount);
   }, [initialAmount]);
+
+  useEffect(() => {
+    if (isOpen) refresh();
+  }, [isOpen, refresh]);
 
   const amounts = [
     { value: 12, label: "One Child's Peace" },
@@ -44,6 +49,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
     }
 
     setIsSubmitting(true);
+    trackDonateOpen(amount);
     onClose(); // close our modal before opening DonorFuse popup
 
     const rawPhone = (formData.phone || '').replace(/\D/g, '');
@@ -64,6 +70,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       // DonorFuse passes true (boolean) on successful payment, and false/object/undefined on cancel
       const didDonate = result === true || result?.success === true || result?.donated === true;
       if (didDonate) {
+        trackDonationCompleted(amount);
         onSuccess({ firstName: formData.firstName, amount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }

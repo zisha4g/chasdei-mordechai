@@ -1,176 +1,270 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Heart } from 'lucide-react';
 
 const DonatePage = ({ onDonateClick }) => {
+  const [selectedAmount, setSelectedAmount] = useState(60);
+  const [customAmount, setCustomAmount] = useState(60);
+  const donateBoxRef = useRef(null);
+
+  const handleSelectTier = (amount) => {
+    setSelectedAmount(amount);
+    setCustomAmount(amount);
+  };
+
+  const handleCustomChange = (e) => {
+    const val = parseInt(e.target.value, 10);
+    if (!isNaN(val) && val > 0) { setCustomAmount(val); setSelectedAmount(val); }
+    else if (e.target.value === '') setCustomAmount('');
+  };
+
+  const tiers = [
+    { amount: 120, title: 'Feed an Entire Family', desc: 'A full Shabbos table. Fish. Chicken. Kugel. Everything a family of eight needs.' },
+    { amount: 60,  title: 'Fill the Fridge',       desc: 'The essentials that turn a week of panic into peace.', popular: true },
+    { amount: 12,  title: "One Child's Shabbos",   desc: 'Ensure one child feels the full joy of the holy day.' },
+  ];
+
   return (
-    <div className="site-page pb-20 pt-20">
+    <div style={{background:'#0B1A4F', color:'#fff', minHeight:'100vh'}}>
       <Helmet>
         <title>Donate | Chasdei Mordechai</title>
-        <meta
-          name="description"
-          content="Make a secure donation to Chasdei Mordechai. Feed a family in crisis."
-        />
+        <meta name="description" content="Make a secure donation to Chasdei Mordechai. Feed a family in crisis." />
       </Helmet>
 
-      <section className="border-b border-white/10 bg-[#101a4d]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[500px]">
-          <div className="flex items-center justify-center bg-[#0c143f] py-8 px-6 min-h-[280px] lg:min-h-full">
-            <img
-              src="/images/1012.png"
-              alt="Children by empty fridge"
-              className="max-h-[500px] w-auto object-contain"
-            />
+      {/* ── HERO ── */}
+      <section style={{position:'relative', minHeight:'75vh', display:'flex', alignItems:'center', overflow:'hidden', paddingBottom:'3rem'}}>
+        <div style={{position:'absolute', inset:0, zIndex:0, backgroundImage:"url('/images/donate-top.png')", backgroundSize:'cover', backgroundPosition:'center top', backgroundRepeat:'no-repeat'}}></div>
+        <div style={{position:'absolute', inset:0, zIndex:0, background:'linear-gradient(110deg, rgba(7,15,48,0.95) 0%, rgba(11,26,79,0.82) 55%, rgba(7,15,48,0.92) 100%)'}}></div>
+        <div style={{position:'absolute', inset:0, zIndex:1, pointerEvents:'none', background:'radial-gradient(ellipse at 50% 0%, rgba(200,20,30,0.15) 0%, transparent 60%)'}}></div>
+
+        <div style={{position:'relative', zIndex:2, maxWidth:'960px', padding:'0 7%', paddingTop:'72px', textAlign:'center', margin:'0 auto', width:'100%'}}>
+          <div style={{display:'inline-flex', alignItems:'center', gap:'0.5rem', background:'rgba(242,223,168,0.09)', border:'1px solid rgba(242,223,168,0.27)', color:'#F2DFA8', fontSize:'0.75rem', fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase', padding:'0.4rem 1.1rem', borderRadius:'100px', marginBottom:'2rem'}}>
+            Make a Difference Today
           </div>
-          <div className="flex flex-col items-center justify-center text-center px-8 py-16 bg-[#101a4d] lg:px-12">
-            <span className="site-eyebrow px-5 py-1.5">Make a Difference</span>
-            <h1 className="font-display mt-8 text-5xl md:text-6xl lg:text-7xl font-semibold uppercase text-white mb-6 leading-[0.92]">
-              Shabbos Is Coming.<br />
-              <span className="text-[#efd37a]">Her Fridge Is Empty.</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-white/88 mb-10 max-w-lg leading-relaxed font-medium">
-              Hashem placed this moment in your hands.<br />
-              You are the power to say <strong className="text-white">YES.</strong>
+          <h1 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(3.8rem,9.5vw,9rem)', color:'#FFFFFF', lineHeight:0.92, letterSpacing:'2px', fontWeight:700, margin:'0 0 1.8rem 0'}}>
+            SHABBOS IS COMING.<br />HER FRIDGE<br />
+            <span style={{color:'#F2DFA8', textShadow:'0 0 30px rgba(242,223,168,0.4), 0 0 60px rgba(242,223,168,0.15)'}}>IS EMPTY.</span>
+          </h1>
+          <p style={{fontFamily:"'Inter',sans-serif", fontSize:'clamp(1rem,1.8vw,1.2rem)', color:'rgba(255,255,255,0.78)', lineHeight:1.85, maxWidth:'510px', margin:'0 auto 2.8rem'}}>
+            A mother stands before an empty fridge, calculating how to make Shabbos this week.<br /><br />
+            <strong style={{color:'#fff'}}>Hashem placed this moment in your hands.</strong><br />
+            You are the power to say YES.
+          </p>
+          <div style={{display:'flex', gap:'1rem', flexWrap:'wrap', alignItems:'center', justifyContent:'center', marginBottom:'2rem'}}>
+            <button
+              onClick={() => donateBoxRef.current?.scrollIntoView({behavior:'smooth', block:'center'})}
+              style={{display:'inline-block', background:'#F2DFA8', color:'#0B1A4F', fontSize:'0.95rem', fontWeight:900, letterSpacing:'1.5px', textTransform:'uppercase', padding:'1rem 2.5rem', borderRadius:'100px', border:'none', cursor:'pointer', boxShadow:'0 8px 32px rgba(0,0,0,0.3)', transition:'all 0.22s ease', whiteSpace:'nowrap', fontFamily:"'Inter',sans-serif"}}
+              onMouseEnter={e => { e.currentTarget.style.background='#E5CA7A'; e.currentTarget.style.transform='translateY(-3px) scale(1.02)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='#F2DFA8'; e.currentTarget.style.transform=''; }}
+            >
+              Donate Now →
+            </button>
+          </div>
+          <div style={{display:'flex', gap:'2rem', flexWrap:'wrap', alignItems:'center', justifyContent:'center'}}>
+            {['🔒 Secure Checkout','📋 Tax-Deductible','❤️ 100% to Families'].map(b => (
+              <span key={b} style={{color:'rgba(255,255,255,0.45)', fontSize:'0.82rem', fontWeight:500, fontFamily:"'Inter',sans-serif"}}>{b}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── GRADIENT FADE ── */}
+      <div style={{height:'80px', background:'linear-gradient(to bottom, #0B1A4F, #070F30)'}}></div>
+
+      {/* ── STORY BAND ── */}
+      <div style={{background:'#070F30', padding:'5.5rem 6%', borderBottom:'1px solid rgba(255,255,255,0.10)'}}>
+        <div style={{maxWidth:'720px', margin:'0 auto', textAlign:'center'}}>
+          <div style={{display:'inline-block', background:'rgba(200,20,30,0.12)', color:'#F2DFA8', border:'1px solid rgba(200,20,30,0.30)', fontSize:'0.72rem', fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase', padding:'0.4rem 1rem', borderRadius:'100px', marginBottom:'1.5rem', fontFamily:"'Inter',sans-serif"}}>
+            Her Story
+          </div>
+          <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(2rem,4.5vw,3.2rem)', color:'#FFFFFF', letterSpacing:'1px', fontWeight:700, marginBottom:'1.25rem'}}>
+            THIS IS WHERE YOU STEP IN.
+          </h2>
+          <p style={{fontSize:'1.05rem', color:'rgba(255,255,255,0.62)', lineHeight:1.85, marginBottom:'1.1rem', fontFamily:"'Inter',sans-serif"}}>
+            She hides her panic with a smile, even as her children ask, <em>"Is there more chicken?"</em> or <em>"Can I have more sweet potato?"</em>
+          </p>
+          <div style={{width:'56px', height:'3px', background:'#C8141E', borderRadius:'100px', margin:'1.75rem auto'}}></div>
+          <p style={{fontSize:'1.05rem', color:'rgba(255,255,255,0.62)', lineHeight:1.85, marginBottom:'1.1rem', fontFamily:"'Inter',sans-serif"}}>
+            <strong style={{color:'#fff'}}>Hundreds of donors have already said: "I won't let a family face Shabbos like this."</strong>
+          </p>
+          <p style={{fontSize:'1.05rem', color:'rgba(255,255,255,0.62)', lineHeight:1.85, fontFamily:"'Inter',sans-serif"}}>
+            It takes less than a minute. But for this mother, it changes the entire week.
+          </p>
+        </div>
+      </div>
+
+      {/* ── 3 PHOTO CARDS ── */}
+      <section style={{background:'#0B1A4F', padding:'6rem 6%'}}>
+        <div style={{maxWidth:'1100px', margin:'0 auto'}}>
+          <div style={{textAlign:'center', marginBottom:'3rem'}}>
+            <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(2.5rem,5vw,4.2rem)', color:'#FFFFFF', letterSpacing:'1px', fontWeight:700, lineHeight:1, margin:'0 0 0.75rem 0'}}>
+              THIS IS WHERE YOU STEP IN.
+            </h2>
+            <p style={{color:'rgba(255,255,255,0.62)', fontSize:'1.05rem', fontFamily:"'Inter',sans-serif"}}>
+              Hundreds of donors have already said, "I won't let a family face Shabbos like this."
             </p>
-            <Button
-              onClick={() => onDonateClick(60)}
-              className="rounded-full bg-[#e8cc74] px-14 py-7 text-xl font-extrabold uppercase tracking-[0.12em] text-[#091031] shadow-xl transition-transform hover:scale-105 hover:bg-[#f1d989]"
-            >
-              Donate Now
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-[#0b123a]">
-        <div className="container mx-auto px-4 max-w-3xl text-center space-y-6">
-          <Heart className="mx-auto text-[#efd37a] mb-4" size={40} />
-          <p className="text-2xl text-white font-medium leading-relaxed">
-            A mother stands before an empty fridge, calculating how to make Shabbos this week. She hides her panic with a smile.
-          </p>
-          <p className="text-lg text-white/88 leading-relaxed">
-            Even as her children ask, "Is there more chicken?" or "Can I have more sweet potato?" — she has no answer. This isn't far away. It's happening right here, in our community.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-20 border-t border-white/8 bg-[#101a4d]">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-4xl md:text-5xl font-semibold uppercase text-white mb-4">This Is Where You Step In.</h2>
-            <p className="text-white/88">Hundreds of donors have already said, "I won't let a family face Shabbos like this."</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* Card 1 */}
-            <div 
-              onClick={() => onDonateClick(120)}
-              className="site-shell rounded-[1.8rem] overflow-hidden transition-all duration-300 cursor-pointer group flex flex-col h-full hover:-translate-y-2"
+          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1.5rem', marginBottom:'3rem'}}>
+            {/* $120 */}
+            <div
+              onClick={() => { handleSelectTier(120); donateBoxRef.current?.scrollIntoView({behavior:'smooth', block:'center'}); }}
+              style={{background:'rgba(255,255,255,0.06)', border:'1.5px solid rgba(255,255,255,0.10)', borderRadius:'28px', overflow:'hidden', cursor:'pointer', transition:'all 0.3s ease', display:'flex', flexDirection:'column'}}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow='0 24px 60px rgba(0,0,0,0.35)'; e.currentTarget.style.borderColor='#F2DFA8'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow=''; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)'; }}
             >
-              <div className="h-48 overflow-hidden relative">
-                <img 
-                  src="https://horizons-cdn.hostinger.com/1084070f-ea28-4c68-a5d2-91589f967163/bdac3a76366932238b44ef48a7ab23ae.png" 
-                  alt="Family at Shabbos table with traditional foods" 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              <div style={{height:'192px', overflow:'hidden', position:'relative'}}>
+                <img src="/images/donate-120.png" alt="Family at Shabbos table" style={{width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.5s ease'}}
+                  onMouseEnter={e => e.currentTarget.style.transform='scale(1.10)'}
+                  onMouseLeave={e => e.currentTarget.style.transform=''}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <span className="font-display text-4xl font-semibold">$120</span>
+                <div style={{position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.6), transparent'}}></div>
+                <div style={{position:'absolute', bottom:'1rem', left:'1rem'}}>
+                  <span style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.5rem', color:'#fff', fontWeight:400}}>$120</span>
                 </div>
               </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-white mb-2 transition-colors">Feed an Entire Family</h3>
-                <p className="text-white/88 mb-6 flex-grow">A full Shabbos table. Fish. Chicken. Kugel. Everything.</p>
-                <div className="text-[#efd37a] font-medium flex items-center">
-                  Select <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+              <div style={{padding:'1.5rem', flexGrow:1, display:'flex', flexDirection:'column'}}>
+                <h3 style={{fontWeight:700, color:'#fff', fontSize:'1.1rem', marginBottom:'0.5rem', fontFamily:"'Inter',sans-serif"}}>Feed an Entire Family</h3>
+                <p style={{color:'rgba(255,255,255,0.62)', fontSize:'0.95rem', lineHeight:1.65, flexGrow:1, margin:'0 0 1rem 0', fontFamily:"'Inter',sans-serif"}}>A full Shabbos table. Fish. Chicken. Kugel. Everything.</p>
+                <div style={{color:'#F2DFA8', fontWeight:600, fontSize:'0.9rem', fontFamily:"'Inter',sans-serif"}}>Select →</div>
               </div>
             </div>
 
-            {/* Card 2 (Popular) */}
-            <div 
-              onClick={() => onDonateClick(60)}
-              className="rounded-[1.8rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(23,37,84,0.3)] hover:-translate-y-2 transition-all duration-300 cursor-pointer group flex flex-col h-full relative border border-[#e8cc74] bg-[rgba(255,255,255,0.08)]"
+            {/* $60 — Popular */}
+            <div
+              onClick={() => { handleSelectTier(60); donateBoxRef.current?.scrollIntoView({behavior:'smooth', block:'center'}); }}
+              style={{background:'rgba(242,223,168,0.08)', border:'1.5px solid #F2DFA8', borderRadius:'28px', overflow:'hidden', cursor:'pointer', transition:'all 0.3s ease', display:'flex', flexDirection:'column', position:'relative', boxShadow:'0 0 0 3px rgba(242,223,168,0.16)'}}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow='0 0 0 3px rgba(242,223,168,0.16), 0 24px 60px rgba(0,0,0,0.35)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 0 0 3px rgba(242,223,168,0.16)'; }}
             >
-              <div className="absolute top-4 right-4 z-10 bg-[#e8cc74] text-[#091031] px-3 py-1 rounded-full text-xs font-bold shadow-md">POPULAR</div>
-              <div className="h-48 overflow-hidden relative">
-                <img 
-                  src="https://horizons-cdn.hostinger.com/1084070f-ea28-4c68-a5d2-91589f967163/6b669c963b859e9851d69c5b09bd35a4.png" 
-                  alt="Children sharing food and joy" 
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
+              <div style={{position:'absolute', top:'1rem', right:'1rem', zIndex:10, background:'#F2DFA8', color:'#0B1A4F', fontSize:'0.68rem', fontWeight:800, letterSpacing:'1.5px', textTransform:'uppercase', padding:'0.3rem 1rem', borderRadius:'100px', fontFamily:"'Inter',sans-serif"}}>
+                Most Popular
+              </div>
+              <div style={{height:'192px', overflow:'hidden', position:'relative'}}>
+                <img src="/images/donate-60.png" alt="Children sharing food and joy" style={{width:'100%', height:'100%', objectFit:'cover', opacity:0.85, transition:'transform 0.5s ease'}}
+                  onMouseEnter={e => e.currentTarget.style.transform='scale(1.10)'}
+                  onMouseLeave={e => e.currentTarget.style.transform=''}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#091031] via-[#091031]/60 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <span className="font-display text-5xl font-semibold drop-shadow-md">$60</span>
+                <div style={{position:'absolute', inset:0, background:'linear-gradient(to top, rgba(9,16,49,0.85), rgba(9,16,49,0.4) 50%, transparent)'}}></div>
+                <div style={{position:'absolute', bottom:'1rem', left:'1rem'}}>
+                  <span style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.8rem', color:'#fff', fontWeight:400}}>$60</span>
                 </div>
               </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold mb-2 text-white">Fill the Fridge</h3>
-                <p className="text-primary-foreground/90 mb-6 flex-grow">The essentials that turn a week of panic into peace.</p>
-                <div className="text-[#efd37a] font-medium flex items-center">
-                  Select <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+              <div style={{padding:'1.5rem', flexGrow:1, display:'flex', flexDirection:'column'}}>
+                <h3 style={{fontWeight:700, color:'#fff', fontSize:'1.1rem', marginBottom:'0.5rem', fontFamily:"'Inter',sans-serif"}}>Fill the Fridge</h3>
+                <p style={{color:'rgba(255,255,255,0.62)', fontSize:'0.95rem', lineHeight:1.65, flexGrow:1, margin:'0 0 1rem 0', fontFamily:"'Inter',sans-serif"}}>The essentials that turn a week of panic into peace.</p>
+                <div style={{color:'#F2DFA8', fontWeight:600, fontSize:'0.9rem', fontFamily:"'Inter',sans-serif"}}>Select →</div>
               </div>
             </div>
 
-            {/* Card 3 */}
-            <div 
-              onClick={() => onDonateClick(12)}
-              className="site-shell rounded-[1.8rem] overflow-hidden transition-all duration-300 cursor-pointer group flex flex-col h-full hover:-translate-y-2"
+            {/* $12 */}
+            <div
+              onClick={() => { handleSelectTier(12); donateBoxRef.current?.scrollIntoView({behavior:'smooth', block:'center'}); }}
+              style={{background:'rgba(255,255,255,0.06)', border:'1.5px solid rgba(255,255,255,0.10)', borderRadius:'28px', overflow:'hidden', cursor:'pointer', transition:'all 0.3s ease', display:'flex', flexDirection:'column'}}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow='0 24px 60px rgba(0,0,0,0.35)'; e.currentTarget.style.borderColor='#F2DFA8'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow=''; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)'; }}
             >
-              <div className="h-48 bg-[rgba(255,255,255,0.03)] relative flex items-center justify-center border-b border-white/10">
-                <Heart className="text-[#efd37a]/30 w-24 h-24 absolute opacity-50 group-hover:scale-110 transition-transform duration-500" />
-                <span className="font-display text-5xl font-semibold text-[#efd37a] relative z-10">$12</span>
-              </div>
-              <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-white mb-2 transition-colors">One Child's Shabbos</h3>
-                <p className="text-white/88 mb-6 flex-grow">Ensure one child feels the full joy of the day.</p>
-                <div className="text-[#efd37a] font-medium flex items-center">
-                  Select <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <div style={{height:'192px', overflow:'hidden', position:'relative'}}>
+                <img src="/images/donate-12.png" alt="One child's Shabbos" style={{width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.5s ease'}}
+                  onMouseEnter={e => e.currentTarget.style.transform='scale(1.10)'}
+                  onMouseLeave={e => e.currentTarget.style.transform=''}
+                />
+                <div style={{position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'}}></div>
+                <div style={{position:'absolute', bottom:'1rem', left:'1rem'}}>
+                  <span style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.5rem', color:'#fff', fontWeight:400}}>$12</span>
                 </div>
               </div>
+              <div style={{padding:'1.5rem', flexGrow:1, display:'flex', flexDirection:'column'}}>
+                <h3 style={{fontWeight:700, color:'#fff', fontSize:'1.1rem', marginBottom:'0.5rem', fontFamily:"'Inter',sans-serif"}}>One Child's Shabbos</h3>
+                <p style={{color:'rgba(255,255,255,0.62)', fontSize:'0.95rem', lineHeight:1.65, flexGrow:1, margin:'0 0 1rem 0', fontFamily:"'Inter',sans-serif"}}>Ensure one child feels the full joy of the day.</p>
+                <div style={{color:'#F2DFA8', fontWeight:600, fontSize:'0.9rem', fontFamily:"'Inter',sans-serif"}}>Select →</div>
+              </div>
             </div>
-          </div>
-
-          <div className="text-center max-w-xl mx-auto space-y-6">
-            <Button 
-              onClick={() => onDonateClick(60)}
-              className="w-full rounded-full bg-[#e8cc74] py-8 text-xl font-extrabold uppercase tracking-[0.14em] text-[#091031] shadow-xl hover:bg-[#f1d989]"
-            >
-              YES. I WILL BE THE ANSWER.
-            </Button>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-[#0b123a] border-t border-white/8">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="rounded-[2rem] overflow-hidden shadow-2xl border border-white/10">
-              <img
-                src="/images/1011.png"
-                alt="Children eating potato chips"
-                className="w-full h-[400px] object-cover"
-              />
-            </div>
-            <div className="text-center lg:text-left space-y-6">
-              <div className="w-24 h-1 bg-[#efd37a] rounded-full mx-auto lg:mx-0"></div>
-              <h2 className="font-display text-4xl font-semibold uppercase text-white">It takes less than a minute.</h2>
-              <p className="text-lg text-white/88">
-                But for this mother, it changes the entire week. <span className="font-bold text-white">You are the answer she's been waiting for.</span>
+      {/* ── TIERS + DONATE BOX ── */}
+      <section style={{background:'#070F30', padding:'7rem 6%'}} id="give">
+        <div style={{maxWidth:'1100px', margin:'0 auto'}}>
+          <div style={{display:'grid', gridTemplateColumns:'1.1fr 0.9fr', gap:'5rem', alignItems:'start'}}>
+
+            {/* Left — tier list */}
+            <div>
+              <div style={{display:'inline-block', background:'rgba(200,20,30,0.12)', color:'#F2DFA8', border:'1px solid rgba(200,20,30,0.30)', fontSize:'0.72rem', fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase', padding:'0.4rem 1rem', borderRadius:'100px', marginBottom:'1.5rem', fontFamily:"'Inter',sans-serif"}}>
+                Choose Your Impact
+              </div>
+              <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(2.2rem,4vw,3.5rem)', color:'#FFFFFF', letterSpacing:'1px', lineHeight:1, fontWeight:700, marginBottom:'1rem'}}>
+                WHAT DOES YOUR <span style={{color:'#F2DFA8'}}>GIFT</span> DO?
+              </h2>
+              <p style={{color:'rgba(255,255,255,0.62)', fontSize:'0.98rem', lineHeight:1.75, marginBottom:'2rem', fontFamily:"'Inter',sans-serif"}}>
+                Every amount transforms a family's Shabbos and restores their dignity.
               </p>
-              <Button
-                onClick={() => onDonateClick(60)}
-                className="rounded-full bg-[#e8cc74] px-8 py-6 text-lg font-extrabold uppercase tracking-[0.12em] text-[#091031] shadow-xl hover:bg-[#f1d989]"
-              >
-                YES. I WILL BE THE ANSWER.
-              </Button>
+
+              <div style={{display:'flex', flexDirection:'column', gap:'1rem', marginBottom:'2.5rem'}}>
+                {tiers.map(tier => {
+                  const isSel = selectedAmount === tier.amount;
+                  return (
+                    <div
+                      key={tier.amount}
+                      onClick={() => handleSelectTier(tier.amount)}
+                      style={{background: isSel ? 'rgba(242,223,168,0.08)' : 'rgba(255,255,255,0.06)', border: isSel ? '1.5px solid #F2DFA8' : '1.5px solid rgba(255,255,255,0.10)', borderRadius:'22px', padding:'1.5rem 1.75rem', cursor:'pointer', transition:'all 0.25s ease', position:'relative', display:'flex', gap:'1.5rem', alignItems:'flex-start', boxShadow: isSel ? '0 0 0 3px rgba(242,223,168,0.16), 0 20px 60px rgba(0,0,0,0.28)' : 'none'}}
+                      onMouseEnter={e => { if (!isSel) { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.borderColor='#F2DFA8'; e.currentTarget.style.transform='translateY(-4px)'; } }}
+                      onMouseLeave={e => { if (!isSel) { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)'; e.currentTarget.style.transform=''; } }}
+                    >
+                      {tier.popular && (
+                        <div style={{position:'absolute', top:'-13px', left:'50%', transform:'translateX(-50%)', background:'#F2DFA8', color:'#0B1A4F', fontSize:'0.68rem', fontWeight:800, letterSpacing:'1.5px', textTransform:'uppercase', padding:'0.3rem 1rem', borderRadius:'100px', whiteSpace:'nowrap', fontFamily:"'Inter',sans-serif"}}>
+                          Most Popular
+                        </div>
+                      )}
+                      <div style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.5rem', color:'#FFFFFF', lineHeight:1, fontWeight:400, minWidth:'80px'}}>${tier.amount}</div>
+                      <div>
+                        <div style={{fontWeight:700, color:'#F2DFA8', fontSize:'0.85rem', letterSpacing:'1px', textTransform:'uppercase', marginBottom:'0.5rem', fontFamily:"'Inter',sans-serif"}}>{tier.title}</div>
+                        <p style={{color:'rgba(255,255,255,0.55)', fontSize:'0.95rem', lineHeight:1.65, margin:0, fontFamily:"'Inter',sans-serif"}}>{tier.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Social proof */}
+              <div style={{padding:'1.5rem', background:'rgba(0,0,0,0.2)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:'16px'}}>
+                <div style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.8rem', color:'#F2DFA8', lineHeight:1, fontWeight:400}}>847+</div>
+                <div style={{color:'rgba(255,255,255,0.38)', fontSize:'0.85rem', marginTop:'0.2rem', fontFamily:"'Inter',sans-serif"}}>Families helped this year alone</div>
+              </div>
             </div>
+
+            {/* Right — sticky donate box */}
+            <div style={{position:'sticky', top:'88px'}}>
+              <div ref={donateBoxRef} style={{background:'rgba(255,255,255,0.05)', border:'1.5px solid rgba(255,255,255,0.14)', borderRadius:'26px', padding:'2.5rem 3rem', textAlign:'center', backdropFilter:'blur(10px)'}}>
+                <h3 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'2.2rem', color:'#FFFFFF', letterSpacing:'1px', marginBottom:'1.5rem', fontWeight:700}}>
+                  YES. I WILL BE THE ANSWER.
+                </h3>
+                <input
+                  type="number"
+                  min="1"
+                  value={customAmount}
+                  onChange={handleCustomChange}
+                  style={{width:'100%', background:'rgba(255,255,255,0.06)', border:'1.5px solid rgba(255,255,255,0.15)', borderRadius:'100px', color:'#FFFFFF', fontSize:'1.05rem', fontFamily:"'Inter',sans-serif", fontWeight:600, padding:'0.9rem 1.5rem', marginBottom:'1.25rem', outline:'none', textAlign:'center', transition:'border-color 0.2s', display:'block', MozAppearance:'textfield'}}
+                  onFocus={e => e.target.style.borderColor='#F2DFA8'}
+                  onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.15)'}
+                />
+                <button
+                  onClick={() => onDonateClick(selectedAmount)}
+                  style={{width:'100%', background:'#F2DFA8', color:'#0B1A4F', fontSize:'1rem', fontWeight:900, letterSpacing:'2px', textTransform:'uppercase', padding:'1.1rem', borderRadius:'100px', border:'none', cursor:'pointer', boxShadow:'0 8px 32px rgba(0,0,0,0.22)', transition:'all 0.22s ease', fontFamily:"'Inter',sans-serif"}}
+                  onMouseEnter={e => { e.currentTarget.style.background='#E5CA7A'; e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 16px 48px rgba(0,0,0,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#F2DFA8'; e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.22)'; }}
+                >
+                  Donate Now →
+                </button>
+                <p style={{color:'rgba(255,255,255,0.25)', fontSize:'0.78rem', marginTop:'1rem', fontFamily:"'Inter',sans-serif"}}>🔒 Secure · 501(c)(3) · Tax-deductible</p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
+
     </div>
   );
 };

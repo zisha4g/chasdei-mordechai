@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, X } from 'lucide-react';
+import { Settings, X, BarChart2, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { DEFAULT_SITE_SETTINGS, fetchLatestSiteSettings } from '@/hooks/useSiteSettings';
+import { GA4_ID } from '@/lib/analytics';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function downloadCSV(rows) {
@@ -39,6 +40,7 @@ const EMPTY_SETTINGS_FORM = {
   video_url: DEFAULT_SITE_SETTINGS.videoUrl,
   donorfuse_campaign_id: String(DEFAULT_SITE_SETTINGS.donorFuseCampaignId),
   donorfuse_link: DEFAULT_SITE_SETTINGS.donorFuseLink,
+  looker_studio_url: '',
 };
 
 function SiteSettingsModal({ isOpen, onClose }) {
@@ -75,6 +77,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
       video_url: row.video_url || EMPTY_SETTINGS_FORM.video_url,
       donorfuse_campaign_id: String(row.donorfuse_campaign_id ?? EMPTY_SETTINGS_FORM.donorfuse_campaign_id),
       donorfuse_link: row.donorfuse_link || EMPTY_SETTINGS_FORM.donorfuse_link,
+      looker_studio_url: row.looker_studio_url || '',
     });
   }, []);
 
@@ -105,6 +108,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
       video_url: form.video_url.trim(),
       donorfuse_campaign_id: campaignId,
       donorfuse_link: form.donorfuse_link.trim(),
+      looker_studio_url: form.looker_studio_url.trim(),
     };
 
     let err;
@@ -171,7 +175,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
                   value={form.video_url}
                   onChange={updateField('video_url')}
                   placeholder="https://vimeo.com/1173352905"
-                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
 
@@ -183,7 +187,7 @@ function SiteSettingsModal({ isOpen, onClose }) {
                   value={form.donorfuse_campaign_id}
                   onChange={updateField('donorfuse_campaign_id')}
                   placeholder="11426"
-                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
 
@@ -193,8 +197,19 @@ function SiteSettingsModal({ isOpen, onClose }) {
                   value={form.donorfuse_link}
                   onChange={updateField('donorfuse_link')}
                   placeholder="cm"
-                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Looker Studio Embed URL</label>
+                <input
+                  value={form.looker_studio_url}
+                  onChange={updateField('looker_studio_url')}
+                  placeholder="https://lookerstudio.google.com/embed/reporting/..."
+                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                <p className="mt-1 text-xs text-gray-400">Paste the embed URL from a Looker Studio report to show GA4 data in the Analytics panel.</p>
               </div>
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -218,6 +233,133 @@ function SiteSettingsModal({ isOpen, onClose }) {
               </div>
             </form>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Analytics panel ───────────────────────────────────────────────────────────
+const TRACKED_EVENTS = [
+  { name: 'page_view', label: 'Page views', note: 'Every route change', conversion: false },
+  { name: 'donate_button_click', label: 'Donate button click', note: 'When form is submitted', conversion: false },
+  { name: 'donation_completed', label: 'Donation completed', note: 'After DonorFuse confirms payment', conversion: true },
+  { name: 'raffle_entry_submitted', label: 'Raffle entry submitted', note: 'After successful DB insert', conversion: true },
+];
+
+function AnalyticsPanel({ isOpen, onClose }) {
+  const [lookerUrl, setLookerUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    fetchLatestSiteSettings().then(({ data }) => {
+      setLookerUrl(String(data?.looker_studio_url || '').trim());
+      setLoading(false);
+    });
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const isActive = Boolean(GA4_ID);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 p-4 sm:p-6">
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">Analytics Overview</h2>
+            <p className="text-xs text-gray-400">Google Analytics 4 status and event tracking</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* GA4 Status */}
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">GA4 Status</span>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                {isActive ? 'Active' : 'Not configured'}
+              </span>
+            </div>
+            {isActive ? (
+              <p className="text-sm text-gray-600">
+                Tracking with Measurement ID: <span className="font-mono font-semibold text-gray-800">{GA4_ID}</span>
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Add <span className="font-mono bg-white border rounded px-1">VITE_GA4_MEASUREMENT_ID=G-XXXXXXXXXX</span> to your <span className="font-mono">.env</span> file and redeploy.
+              </p>
+            )}
+          </div>
+
+          {/* Tracked Events */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Tracked Events</h3>
+            <div className="space-y-2">
+              {TRACKED_EVENTS.map((ev) => (
+                <div key={ev.name} className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-4 py-2.5">
+                  <div>
+                    <span className="text-sm font-medium text-gray-800">{ev.label}</span>
+                    <p className="text-xs text-gray-400">{ev.note} · <span className="font-mono text-gray-500">{ev.name}</span></p>
+                  </div>
+                  {ev.conversion && (
+                    <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0 ml-2">Conversion</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-gray-400">
+              ⭐ Mark <span className="font-semibold">donation_completed</span> and <span className="font-semibold">raffle_entry_submitted</span> as conversions in GA4 → Admin → Conversions.
+            </p>
+          </div>
+
+          {/* Open GA4 link */}
+          <a
+            href="https://analytics.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition"
+          >
+            <ExternalLink size={15} />
+            Open Google Analytics
+          </a>
+
+          {/* Looker Studio embed */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">Dashboard Report</h3>
+            {loading ? (
+              <p className="text-xs text-gray-400">Loading…</p>
+            ) : lookerUrl ? (
+              <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                <iframe
+                  src={lookerUrl}
+                  title="Looker Studio Analytics Report"
+                  className="w-full"
+                  style={{ height: '480px', border: 'none' }}
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+                <p className="text-sm text-gray-500 mb-1">No dashboard configured yet.</p>
+                <p className="text-xs text-gray-400">
+                  Create a <a href="https://lookerstudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Looker Studio</a> report connected to your GA4 property,
+                  copy its embed URL, and paste it under <span className="font-semibold">Site Settings → Looker Studio Embed URL</span>.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -355,6 +497,7 @@ function EntryModal({ entry, onClose, onSaved }) {
 // ── Main admin panel ──────────────────────────────────────────────────────────
 function AdminPanel({ onLogout }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -420,6 +563,14 @@ function AdminPanel({ onLogout }) {
           <p className="text-xs text-gray-400">Raffle Entries</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAnalyticsOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition"
+            title="Analytics"
+            aria-label="Open analytics"
+          >
+            <BarChart2 size={18} />
+          </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-gray-800 hover:bg-gray-50 transition"
@@ -555,6 +706,7 @@ function AdminPanel({ onLogout }) {
       )}
 
       <SiteSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <AnalyticsPanel isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
     </div>
   );
 }

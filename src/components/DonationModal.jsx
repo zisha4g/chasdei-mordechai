@@ -36,7 +36,7 @@ const DonationModal = ({ isOpen, onClose, donorData }) => {
 
         <div className="relative w-full overflow-hidden rounded-t-2xl bg-black">
           <img 
-            src="/images/1007.png" 
+            src="/images/ty-page.png" 
             alt="Happy children at the Shabbos table" 
             className="w-full max-h-[40vh] object-contain"
           />

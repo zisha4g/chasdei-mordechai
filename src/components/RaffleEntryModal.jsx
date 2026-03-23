@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useRaffle } from '@/contexts/RaffleContext';
 import { supabase } from '@/lib/customSupabaseClient';
+import { trackRaffleEntry } from '@/lib/analytics';
 
 const buildFullAddress = ({ addressLine1, city, state, postalCode }) => {
   const street = addressLine1.trim();
@@ -65,6 +66,7 @@ const RaffleEntryModal = () => {
 
       if (error) throw error;
 
+      trackRaffleEntry();
       toast({
         title: "Success!",
         description: "You're entered to win $1000!",

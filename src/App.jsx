@@ -1,7 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import ScrollToTop from '@/components/ScrollToTop';
+import { initGA4, trackPageView } from '@/lib/analytics';
+
+function PageTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    initGA4();
+  }, []);
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
+  return null;
+}
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HomePage from '@/pages/HomePage';
@@ -34,6 +49,7 @@ function App() {
 
   return (
     <Router>
+      <PageTracker />
       <ScrollToTop />
       <Routes>
         {/* Admin — standalone, no site chrome */}
@@ -43,7 +59,7 @@ function App() {
         <Route path="*" element={
           <div className="flex flex-col min-h-screen bg-[#0b123a]">
             <Header onDonateClick={openDonationForm} />
-            <main className="flex-grow pt-16 md:pt-20">
+            <main className="flex-grow">
               <Routes>
                 <Route path="/" element={<HomePage onDonateClick={openDonationForm} />} />
                 <Route path="/donate" element={<DonatePage onDonateClick={openDonationForm} />} />
