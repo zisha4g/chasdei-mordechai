@@ -174,7 +174,7 @@ const RafflePage = ({ onDonateClick }) => {
               <span className="text-[#efd37a]">to Win $1,000</span>
             </h1>
             <p className="mt-6 text-xl text-white/88 max-w-2xl mx-auto">
-              Watch the video below to unlock your free raffle entry. No donation required.
+              Watch the video below to unlock your free raffle entry.
             </p>
           </div>
 
@@ -269,7 +269,7 @@ const RafflePage = ({ onDonateClick }) => {
                 How it Works
               </h3>
               <p className="leading-relaxed text-white/88">
-                Watch the video above, then click the button to enter your details. Winners will be contacted directly via email and phone. No donation required to enter.
+                Watch the video above, then click the button to enter your details. Winners will be contacted directly via email and phone.
               </p>
             </div>
           </div>
