@@ -239,15 +239,8 @@ function SiteSettingsModal({ isOpen, onClose }) {
   );
 }
 
-// ── Analytics panel ───────────────────────────────────────────────────────────
-const TRACKED_EVENTS = [
-  { name: 'page_view', label: 'Page views', note: 'Every route change', conversion: false },
-  { name: 'donate_button_click', label: 'Donate button click', note: 'When form is submitted', conversion: false },
-  { name: 'donation_completed', label: 'Donation completed', note: 'After DonorFuse confirms payment', conversion: true },
-  { name: 'raffle_entry_submitted', label: 'Raffle entry submitted', note: 'After successful DB insert', conversion: true },
-];
-
-function AnalyticsPanel({ isOpen, onClose }) {
+// ── Analytics full-page panel ──────────────────────────────────────────────────
+function AnalyticsPanel({ isOpen, onClose, entries = [] }) {
   const [lookerUrl, setLookerUrl] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -262,105 +255,198 @@ function AnalyticsPanel({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const isActive = Boolean(GA4_ID);
+  // ── Real numbers from your database ──
+  const now = new Date();
+  const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
+  const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  const totalEntries = entries.length;
+  const weekEntries  = entries.filter(e => new Date(e.created_at) >= ago7).length;
+  const monthEntries = entries.filter(e => new Date(e.created_at) >= ago30).length;
+  const totalRaised  = entries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+  // ── Bar chart — entries per day, last 14 days ──
+  const last14 = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (13 - i));
+    const key = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const count = entries.filter(e => e.created_at?.slice(0, 10) === key).length;
+    return { label, count };
+  });
+  const barMax = Math.max(1, ...last14.map(d => d.count));
+
+  const statCards = [
+    { label: 'Total Entries',  value: totalEntries,                    sub: 'All time',       bg: 'bg-indigo-50',  border: 'border-indigo-200', text: 'text-indigo-700',  num: 'text-indigo-900' },
+    { label: 'This Week',      value: weekEntries,                     sub: 'Last 7 days',    bg: 'bg-sky-50',     border: 'border-sky-200',    text: 'text-sky-700',     num: 'text-sky-900'    },
+    { label: 'This Month',     value: monthEntries,                    sub: 'Last 30 days',   bg: 'bg-violet-50',  border: 'border-violet-200', text: 'text-violet-700',  num: 'text-violet-900' },
+    { label: 'Total Raised',   value: `$${totalRaised.toLocaleString()}`, sub: 'All donations', bg: 'bg-emerald-50', border: 'border-emerald-200',text: 'text-emerald-700', num: 'text-emerald-900'},
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 p-4 sm:p-6">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <div>
-            <h2 className="text-lg font-bold text-gray-800">Analytics Overview</h2>
-            <p className="text-xs text-gray-400">Google Analytics 4 status and event tracking</p>
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#f8f9ff' }}>
+
+      {/* ── Top bar ── */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+              <BarChart2 size={18} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Website Activity</h1>
+              <p className="text-xs text-gray-400">Real numbers from your site</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition"
           >
-            <X size={18} />
+            <X size={15} /> Close
           </button>
         </div>
+      </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto">
-          {/* GA4 Status */}
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">GA4 Status</span>
-              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                {isActive ? 'Active' : 'Not configured'}
-              </span>
-            </div>
-            {isActive ? (
-              <p className="text-sm text-gray-600">
-                Tracking with Measurement ID: <span className="font-mono font-semibold text-gray-800">{GA4_ID}</span>
-              </p>
-            ) : (
-              <p className="text-xs text-gray-500">
-                Add <span className="font-mono bg-white border rounded px-1">VITE_GA4_MEASUREMENT_ID=G-XXXXXXXXXX</span> to your <span className="font-mono">.env</span> file and redeploy.
-              </p>
-            )}
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+
+        {/* ── Live badge notice ── */}
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            Live data — updated in real time
+          </span>
+          <span className="text-xs text-gray-400">Numbers below come directly from your database.</span>
+        </div>
+
+        {/* ── Stat cards ── */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-600 mb-3">Raffle &amp; Donations</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {statCards.map(({ label, value, sub, bg, border, text, num }) => (
+              <div key={label} className={`rounded-2xl border ${bg} ${border} px-5 py-5`}>
+                <p className={`text-3xl font-extrabold ${num}`}>{value}</p>
+                <p className={`text-sm font-semibold mt-1 ${text}`}>{label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+              </div>
+            ))}
           </div>
+        </section>
 
-          {/* Tracked Events */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Tracked Events</h3>
-            <div className="space-y-2">
-              {TRACKED_EVENTS.map((ev) => (
-                <div key={ev.name} className="flex items-center justify-between rounded-lg border border-gray-100 bg-white px-4 py-2.5">
-                  <div>
-                    <span className="text-sm font-medium text-gray-800">{ev.label}</span>
-                    <p className="text-xs text-gray-400">{ev.note} · <span className="font-mono text-gray-500">{ev.name}</span></p>
-                  </div>
-                  {ev.conversion && (
-                    <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0 ml-2">Conversion</span>
-                  )}
+        {/* ── Bar chart ── */}
+        <section>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-sm font-bold text-gray-800">Entries Per Day</h2>
+                <p className="text-xs text-gray-400">Last 14 days — how many people entered the raffle each day</p>
+              </div>
+              <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">Live</span>
+            </div>
+            <div className="flex items-end gap-1.5 h-36">
+              {last14.map(({ label, count }) => (
+                <div key={label} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                  {count > 0 && <span className="text-xs font-bold text-indigo-700">{count}</span>}
+                  <div
+                    className="w-full rounded-t transition-all"
+                    style={{
+                      height: `${Math.max(count === 0 ? 3 : 6, Math.round((count / barMax) * 112))}px`,
+                      background: count === 0
+                        ? '#e0e7ff'
+                        : `linear-gradient(to top, #4f46e5, #818cf8)`,
+                    }}
+                  />
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-gray-400">
-              ⭐ Mark <span className="font-semibold">donation_completed</span> and <span className="font-semibold">raffle_entry_submitted</span> as conversions in GA4 → Admin → Conversions.
-            </p>
+            <div className="flex gap-1.5 mt-2">
+              {last14.map(({ label }, i) => (
+                <div key={label} className="flex-1 text-center">
+                  <span className="text-[9px] text-gray-400">{i % 2 === 0 ? label : ''}</span>
+                </div>
+              ))}
+            </div>
           </div>
+        </section>
 
-          {/* Open GA4 link */}
-          <a
-            href="https://analytics.google.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition"
-          >
-            <ExternalLink size={15} />
-            Open Google Analytics
-          </a>
-
-          {/* Looker Studio embed */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Dashboard Report</h3>
-            {loading ? (
-              <p className="text-xs text-gray-400">Loading…</p>
-            ) : lookerUrl ? (
-              <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
-                <iframe
-                  src={lookerUrl}
-                  title="Looker Studio Analytics Report"
-                  className="w-full"
-                  style={{ height: '480px', border: 'none' }}
-                  allowFullScreen
-                />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
-                <p className="text-sm text-gray-500 mb-1">No dashboard configured yet.</p>
-                <p className="text-xs text-gray-400">
-                  Create a <a href="https://lookerstudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Looker Studio</a> report connected to your GA4 property,
-                  copy its embed URL, and paste it under <span className="font-semibold">Site Settings → Looker Studio Embed URL</span>.
-                </p>
-              </div>
+        {/* ── Full visitor funnel (Looker Studio) ── */}
+        <section>
+          <div className="flex items-start justify-between mb-4 gap-4">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Full Visitor Report</h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                How many people visited the site, watched the video, clicked donate, and completed a gift.
+              </p>
+            </div>
+            {lookerUrl && (
+              <a
+                href={lookerUrl.replace('/embed/', '/')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition"
+              >
+                <ExternalLink size={12} /> Open full screen
+              </a>
             )}
           </div>
-        </div>
+
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-sm text-gray-400">Loading…</div>
+          ) : lookerUrl ? (
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+              <iframe
+                src={lookerUrl}
+                title="Analytics Dashboard"
+                className="w-full"
+                style={{ height: '680px', border: 'none' }}
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-8">
+              <div className="max-w-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">📊</span>
+                  <p className="text-base font-bold text-gray-800">Connect your visitor dashboard</p>
+                </div>
+                <p className="text-sm text-gray-500 mb-6">
+                  Once connected, you'll see exact numbers here — how many people visited each page, how many watched the video, how many clicked donate, and how many finished a donation.
+                </p>
+                <ol className="space-y-3 mb-6">
+                  {[
+                    'Go to Looker Studio (link below) and create a new report using your Google Analytics data.',
+                    'Click Share → Embed report and copy the embed URL.',
+                    'Open Site Settings (gear icon ⚙️ in the top right) and paste the URL under "Looker Studio Embed URL".',
+                    'Save — your full visitor report will appear here instantly.',
+                  ].map((text, i) => (
+                    <li key={i} className="flex gap-3 items-start">
+                      <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                      <p className="text-sm text-gray-600">{text}</p>
+                    </li>
+                  ))}
+                </ol>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href="https://lookerstudio.google.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition"
+                  >
+                    <ExternalLink size={14} /> Open Looker Studio
+                  </a>
+                  <a
+                    href="https://analytics.google.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-4 py-2.5 rounded-xl transition"
+                  >
+                    <ExternalLink size={14} /> Open Google Analytics
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
       </div>
     </div>
   );
@@ -706,7 +792,7 @@ function AdminPanel({ onLogout }) {
       )}
 
       <SiteSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <AnalyticsPanel isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
+      <AnalyticsPanel isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} entries={entries} />
     </div>
   );
 }
