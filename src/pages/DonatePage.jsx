@@ -57,8 +57,8 @@ const DonatePage = ({ onDonateClick }) => {
       `}</style>
 
       {/* HERO */}
-      <section style={{ position: 'relative', minHeight: '75vh', display: 'flex', alignItems: 'center', overflow: 'hidden', paddingBottom: '3rem' }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundImage: "url('/images/donate-top.png')", backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat' }}></div>
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden', paddingBottom: '3rem' }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundImage: "url('/images/1000.png')", backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat' }}></div>
         <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(110deg, rgba(7,15,48,0.95) 0%, rgba(11,26,79,0.82) 55%, rgba(7,15,48,0.92) 100%)' }}></div>
         <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 0%, rgba(200,20,30,0.15) 0%, transparent 60%)' }}></div>
 
@@ -89,23 +89,21 @@ const DonatePage = ({ onDonateClick }) => {
         </div>
       </section>
 
-      <div style={{height:'80px', background:'linear-gradient(to bottom, #0B1A4F, #070F30)'}}></div>
-
-      {/* "This Is Where You Step In" — badge pill removed (was duplicate), h2 in red — Tasks 9 & 12 */}
-      <div style={{background:'#070F30', padding:'5.5rem 6%', borderBottom:'1px solid rgba(255,255,255,0.10)'}}>
+      {/* "This Is Where You Step In" merged into donation section */}
+      <div style={{background:'#070F30', padding:'3rem 6% 0'}}>
         <div style={{maxWidth:'720px', margin:'0 auto', textAlign:'center'}}>
-          <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(2rem,4.5vw,3.2rem)', color:'#C8141E', letterSpacing:'1px', fontWeight:700, marginBottom:'1.25rem'}}>
+          <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:'clamp(2rem,4.5vw,3.2rem)', color:'#F2DFA8', letterSpacing:'1px', fontWeight:700, marginBottom:'1.25rem'}}>
             THIS IS WHERE YOU STEP IN.
           </h2>
-          <div style={{width:'56px', height:'3px', background:'#C8141E', borderRadius:'100px', margin:'0 auto 1.75rem'}}></div>
+          <div style={{width:'56px', height:'3px', background:'rgba(242,223,168,0.45)', borderRadius:'100px', margin:'0 auto 1.75rem'}}></div>
           <p style={{fontSize:'1.05rem', color:'rgba(255,255,255,0.62)', lineHeight:1.85, fontFamily:"'Inter',sans-serif"}}>
             <strong style={{color:'#fff'}}>Hundreds of donors have already said: "I won't let a family face Shabbos like this."</strong>
           </p>
         </div>
       </div>
 
-      {/* Donation tiers + CTA — second donate design removed, box centered — Tasks 10 & 11 */}
-      <section style={{ background: '#070F30', padding: '7rem 6%' }} id="give">
+      {/* Donation tiers + CTA */}
+      <section style={{ background: '#070F30', padding: '2.5rem 6% 7rem' }} id="give">
         <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
           <div className="tier-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
             {tiers.map(tier => {

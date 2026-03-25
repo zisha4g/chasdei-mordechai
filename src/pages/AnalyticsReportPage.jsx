@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, Calendar, ChevronDown, ChevronRight, Monitor, Smartphone, ArrowLeft } from 'lucide-react';
+import { BarChart2, Calendar, ChevronDown, ChevronRight, Monitor, Smartphone, Tablet, ArrowLeft, Globe, Share2 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -34,8 +34,22 @@ const EV_ICON  = { page_view: '📄', video_play: '▶️', video_complete: '�
 const EV_LABEL = { page_view: 'Page visit', video_play: 'Watched video', video_complete: 'Video ended', donate_click: 'Clicked donate', donation_completed: 'Completed donation', raffle_entry: 'Entered raffle' };
 
 function DeviceIcon({ type }) {
-  if (type === 'mobile') return <Smartphone size={13} className="text-gray-400 shrink-0" />;
+  if (type === 'mobile')  return <Smartphone size={13} className="text-gray-400 shrink-0" />;
+  if (type === 'tablet')  return <Tablet      size={13} className="text-gray-400 shrink-0" />;
   return <Monitor size={13} className="text-gray-400 shrink-0" />;
+}
+
+const SOURCE_META = {
+  direct:   { label: 'Direct',        color: 'bg-slate-500',   light: 'bg-slate-100',   text: 'text-slate-700'   },
+  search:   { label: 'Search',         color: 'bg-sky-500',     light: 'bg-sky-100',     text: 'text-sky-700'     },
+  social:   { label: 'Social Media',   color: 'bg-violet-500',  light: 'bg-violet-100',  text: 'text-violet-700'  },
+  referral: { label: 'Referral',       color: 'bg-amber-500',   light: 'bg-amber-100',   text: 'text-amber-700'   },
+  campaign: { label: 'Campaign',       color: 'bg-emerald-500', light: 'bg-emerald-100', text: 'text-emerald-700' },
+};
+function sourceMeta(key) {
+  if (!key || key === 'direct') return SOURCE_META.direct;
+  if (SOURCE_META[key])         return SOURCE_META[key];
+  return { label: key, color: 'bg-rose-500', light: 'bg-rose-100', text: 'text-rose-700' };
 }
 
 // ── Analytics page content ────────────────────────────────────────────────────
@@ -47,6 +61,26 @@ function AnalyticsContent({ onBack }) {
   const [dateTo,           setDateTo]           = useState(() => toDateStr(new Date()));
   const [activePreset,     setActivePreset]     = useState(30);
   const [expandedSession,  setExpandedSession]  = useState(null);
+  const [activeVisitors,   setActiveVisitors]   = useState(null);
+  const [hoveredDevice,    setHoveredDevice]    = useState(null);
+
+  // Poll active visitors (distinct session_ids with an event in the last 5 min) every 30s
+  useEffect(() => {
+    const fetchActive = async () => {
+      const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from('analytics_events')
+        .select('session_id')
+        .gte('created_at', since);
+      if (data) {
+        const unique = new Set(data.map(r => r.session_id).filter(Boolean));
+        setActiveVisitors(unique.size);
+      }
+    };
+    fetchActive();
+    const interval = setInterval(fetchActive, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const applyPreset = (days) => {
     setActivePreset(days);
@@ -105,6 +139,32 @@ function AnalyticsContent({ onBack }) {
   const topPages = Object.entries(pageCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
   const pageMax  = topPages[0]?.[1] || 1;
 
+  // ── Traffic sources ─────────────────────────────────────────────────────
+  // One referrer event is recorded per session. Grab the latest for each session.
+  const referrerBySession = {};
+  events.filter(e => e.event === 'referrer').forEach(e => {
+    if (!e.session_id) return;
+    referrerBySession[e.session_id] = e;
+  });
+
+  // Build source counts: prefer utm_source if present, otherwise referrer_source
+  const sourceCounts = {};
+  Object.values(referrerBySession).forEach(e => {
+    const key = e.utm_source || e.referrer_source || 'direct';
+    sourceCounts[key] = (sourceCounts[key] || 0) + 1;
+  });
+  const sourceEntries = Object.entries(sourceCounts).sort(([, a], [, b]) => b - a);
+  const sourceTotal   = sourceEntries.reduce((s, [, c]) => s + c, 0) || 1;
+
+  // Campaign breakdown (when utm_campaign exists)
+  const campaignCounts = {};
+  Object.values(referrerBySession).forEach(e => {
+    if (!e.utm_campaign) return;
+    const label = `${e.utm_campaign}${e.utm_medium ? ` (${e.utm_medium})` : ''}`;
+    campaignCounts[label] = (campaignCounts[label] || 0) + 1;
+  });
+  const campaignEntries = Object.entries(campaignCounts).sort(([, a], [, b]) => b - a);
+
   const sessionMap = {};
   events.forEach(e => {
     if (!e.session_id) return;
@@ -131,6 +191,16 @@ function AnalyticsContent({ onBack }) {
   const uniqueDonateClickers = uniqueSessionsForEvent('donate_click');
   const uniqueDonors         = uniqueSessionsForEvent('donation_completed');
   const uniqueRaffleEntrants = uniqueSessionsForEvent('raffle_entry');
+
+  // ── Device breakdown ─────────────────────────────────────────────────────────
+  const deviceCounts = { desktop: 0, mobile: 0, tablet: 0 };
+  sessions.forEach(s => { deviceCounts[s.device_type] = (deviceCounts[s.device_type] || 0) + 1; });
+  const deviceTotal = uniqueVisitors || 1;
+  const deviceItems = [
+    { key: 'desktop', label: 'PC / Desktop', Icon: Monitor,    color: 'bg-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
+    { key: 'mobile',  label: 'Phone',        Icon: Smartphone, color: 'bg-sky-500',    light: 'bg-sky-50',    border: 'border-sky-200',    text: 'text-sky-700'    },
+    { key: 'tablet',  label: 'Tablet',       Icon: Tablet,     color: 'bg-violet-500', light: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700' },
+  ];
 
   const funnelMax   = uniqueVisitors || 1;
   const funnelSteps = [
@@ -228,13 +298,21 @@ function AnalyticsContent({ onBack }) {
       {!loading && !tableError && (
         <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
 
-          {/* ── Live badge ── */}
-          <div className="flex items-center gap-2">
+          {/* ── Live badge + active visitors ── */}
+          <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
               Live data
             </span>
             <span className="text-xs text-gray-400">{events.length.toLocaleString()} events · {sessions.length} sessions in this range</span>
+            {activeVisitors !== null && (
+              <span className="inline-flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse inline-block" />
+                <span className="text-rose-900 font-extrabold text-sm">{activeVisitors}</span>
+                active now
+                <span className="text-rose-400 font-normal">(last 5 min)</span>
+              </span>
+            )}
           </div>
 
           {/* ── Stat cards ── */}
@@ -328,6 +406,117 @@ function AnalyticsContent({ onBack }) {
                     </div>
                   ))}
                 </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── Device Overview ── */}
+          <section>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Monitor size={15} className="text-gray-500" />
+                <h2 className="text-sm font-bold text-gray-800">Device Overview</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-5">How your visitors are accessing the site</p>
+              <div className="grid grid-cols-3 gap-4 mb-5">
+                {deviceItems.map(({ key, label, Icon, color, light, border, text }) => {
+                  const count = deviceCounts[key] || 0;
+                  const pct   = deviceTotal > 0 ? Math.round((count / deviceTotal) * 100) : 0;
+                  return (
+                    <div
+                      key={key}
+                      className={`relative rounded-xl border ${border} ${light} px-4 py-4 cursor-default transition-shadow hover:shadow-md`}
+                      onMouseEnter={() => setHoveredDevice(key)}
+                      onMouseLeave={() => setHoveredDevice(null)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon size={16} className={text} />
+                        <span className={`text-xs font-semibold ${text}`}>{label}</span>
+                      </div>
+                      <p className={`text-3xl font-extrabold ${text}`}>{pct}%</p>
+                      {/* Hover tooltip */}
+                      {hoveredDevice === key && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 bg-gray-900 text-white text-xs font-semibold rounded-lg px-3 py-2 whitespace-nowrap shadow-xl pointer-events-none">
+                          {count.toLocaleString()} visit{count !== 1 ? 's' : ''}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Stacked bar */}
+              <div className="h-3 rounded-full overflow-hidden flex gap-px">
+                {deviceItems.map(({ key, color }) => {
+                  const pct = deviceTotal > 0 ? (deviceCounts[key] || 0) / deviceTotal * 100 : 0;
+                  return pct > 0 ? <div key={key} className={`${color} h-full transition-all`} style={{ width: `${pct}%` }} /> : null;
+                })}
+              </div>
+              <div className="flex gap-4 mt-3">
+                {deviceItems.filter(({ key }) => (deviceCounts[key] || 0) > 0).map(({ key, label, color }) => (
+                  <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <span className={`w-2 h-2 rounded-full ${color}`} />
+                    {label} · {deviceCounts[key]}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Traffic Sources ── */}
+          {sourceEntries.length > 0 && (
+            <section>
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <Globe size={15} className="text-gray-500" />
+                  <h2 className="text-sm font-bold text-gray-800">Traffic Sources</h2>
+                </div>
+                <p className="text-xs text-gray-400 mb-5">Where your visitors are coming from</p>
+                <div className="space-y-3">
+                  {sourceEntries.map(([key, count]) => {
+                    const meta = sourceMeta(key);
+                    const pct  = Math.round((count / sourceTotal) * 100);
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className={`text-xs font-semibold w-28 truncate shrink-0 ${meta.text}`}>{meta.label}</span>
+                        <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
+                          <div className={`h-full ${meta.color} rounded transition-all`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 w-8 text-right shrink-0">{count}</span>
+                        <span className="text-xs text-gray-400 w-8 text-right shrink-0">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Campaign breakdown */}
+                {campaignEntries.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Share2 size={13} className="text-gray-400" />
+                      <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Campaigns (UTM)</span>
+                    </div>
+                    <div className="space-y-2">
+                      {campaignEntries.map(([label, count]) => {
+                        const total = campaignEntries.reduce((s, [, c]) => s + c, 0) || 1;
+                        const pct   = Math.round((count / total) * 100);
+                        return (
+                          <div key={label} className="flex items-center gap-3">
+                            <span className="text-xs text-gray-600 w-40 truncate shrink-0">{label}</span>
+                            <div className="flex-1 h-4 bg-gray-100 rounded overflow-hidden">
+                              <div className="h-full bg-emerald-400 rounded transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-xs font-bold text-gray-700 w-8 text-right shrink-0">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {sourceEntries.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-4">No referrer data yet — the migration is required to capture this.</p>
+                )}
               </div>
             </section>
           )}

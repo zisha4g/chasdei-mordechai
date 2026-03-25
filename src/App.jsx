@@ -2,17 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
 import ScrollToTop from '@/components/ScrollToTop';
-import { initGA4, trackPageView } from '@/lib/analytics';
+import { initGA4, trackPageView, trackReferrer, startPageTimer, stopPageTimer } from '@/lib/analytics';
 
 function PageTracker() {
   const location = useLocation();
 
   useEffect(() => {
     initGA4();
+    trackReferrer();
   }, []);
 
   useEffect(() => {
-    trackPageView(location.pathname + location.search);
+    const path = location.pathname + location.search;
+    stopPageTimer();
+    trackPageView(path);
+    startPageTimer(path);
+    return () => { stopPageTimer(); };
   }, [location]);
 
   return null;
@@ -57,12 +62,13 @@ function App() {
         {/* Admin — standalone, no site chrome */}
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/report" element={<AnalyticsReportPage />} />
+        <Route path="/admin/thankyou" element={<ThankYouPage />} />
 
         {/* Public site */}
         <Route path="*" element={
           <div className="flex flex-col min-h-screen bg-[#0b123a]">
             <Header onDonateClick={openDonationForm} />
-            <main className="flex-grow">
+            <main className="flex-grow" style={{ paddingTop: '4px' }}>
               <Routes>
                 <Route path="/" element={<HomePage onDonateClick={openDonationForm} />} />
                 <Route path="/donate" element={<DonatePage onDonateClick={openDonationForm} />} />

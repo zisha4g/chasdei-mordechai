@@ -5,27 +5,23 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Lock, X, RotateCcw } from 'lucide-react';
 import { useRaffle } from '@/contexts/RaffleContext';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { trackVideoPlay, trackVideoComplete } from '@/lib/analytics';
+import { trackVideoPlay, trackVideoComplete, setVideoClickCookie } from '@/lib/analytics';
 
-// Full video must be watched without seeking before raffle unlocks.
-const WATCH_THRESHOLD = 1;
+// Raffle unlocks when video ends OR when 97%+ watched (fallback for edge cases).
+const NEAR_END_THRESHOLD = 0.97;
 
-const RafflePage = ({ onDonateClick }) => {
+const RafflePage = ({ onDonateClick, onDonateForRaffle }) => {
   const { openRaffle } = useRaffle();
   const { settings } = useSiteSettings();
   const iframeRef = useRef(null);
   const playerRef = useRef(null);
-  const progressPollRef = useRef(null);
+  const unlockedRef = useRef(false); // prevent double-firing
   const restartPendingRef = useRef(false);
   const [unlocked, setUnlocked] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showDonatePrompt, setShowDonatePrompt] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const isTrackableVimeo = Boolean(settings.vimeoId);
-
-  useEffect(() => {
-    if (!settings.videoEmbedUrl) return;
-  }, [settings.videoEmbedUrl]);
 
   useEffect(() => {
     if (!isTrackableVimeo) {
@@ -36,118 +32,73 @@ const RafflePage = ({ onDonateClick }) => {
 
     setUnlocked(false);
     setProgress(0);
+    unlockedRef.current = false;
 
-    const existing = document.getElementById('vimeo-player-api');
-    const stopPolling = () => {
-      if (progressPollRef.current) {
-        window.clearInterval(progressPollRef.current);
-        progressPollRef.current = null;
-      }
-    };
-
-    const updateFromPlayer = async () => {
-      if (!playerRef.current) return;
-      try {
-        const [currentTime, duration] = await Promise.all([
-          playerRef.current.getCurrentTime(),
-          playerRef.current.getDuration(),
-        ]);
-        if (!duration || duration <= 0) return;
-        const fraction = Math.min(Math.max(currentTime / duration, 0), 1);
-        setProgress(fraction);
-        if (fraction >= WATCH_THRESHOLD) setUnlocked(true);
-      } catch {
-        // Ignore transient Vimeo API errors.
-      }
+    const doUnlock = () => {
+      if (unlockedRef.current) return;
+      unlockedRef.current = true;
+      trackVideoComplete('/raffle');
+      setProgress(1);
+      setUnlocked(true);
+      setVideoEnded(true);
+      setShowDonatePrompt(true);
     };
 
     const init = () => {
+      // Guard: Vimeo SDK must be ready and iframe must be in the DOM
       if (!iframeRef.current || !window.Vimeo) return;
+
       const player = new window.Vimeo.Player(iframeRef.current);
       playerRef.current = player;
-
       let hasTrackedPlay = false;
-      let hasSeeked = false;
 
       player.on('play', () => {
-        if (restartPendingRef.current) {
-          restartPendingRef.current = false;
-          hasSeeked = false;
-        }
-        stopPolling();
-        progressPollRef.current = window.setInterval(updateFromPlayer, 1000);
+        if (restartPendingRef.current) restartPendingRef.current = false;
         if (!hasTrackedPlay) {
           hasTrackedPlay = true;
           trackVideoPlay('/raffle');
+          setVideoClickCookie();
         }
       });
 
+      // Primary progress tracking via timeupdate
       player.on('timeupdate', (data) => {
-        if (hasSeeked) return;
         if (typeof data?.percent === 'number') {
           const fraction = Math.min(Math.max(data.percent, 0), 1);
           setProgress(fraction);
-          if (fraction >= WATCH_THRESHOLD) setUnlocked(true);
-          return;
+          // Near-end fallback unlock (handles cases where 'ended' doesn't fire)
+          if (fraction >= NEAR_END_THRESHOLD) doUnlock();
         }
-        updateFromPlayer();
       });
 
-      player.on('seeking', () => {
-        if (restartPendingRef.current) return;
-        hasSeeked = true;
-        stopPolling();
-        setUnlocked(false);
-        setVideoEnded(false);
-        setShowDonatePrompt(false);
-        setProgress(0);
-      });
-
-      player.on('seeked', () => {
-        if (restartPendingRef.current) return;
-        hasSeeked = true;
-        stopPolling();
-        setUnlocked(false);
-        setVideoEnded(false);
-        setShowDonatePrompt(false);
-        setProgress(0);
-      });
-
+      // Primary unlock: fires reliably when Vimeo considers the video finished
       player.on('ended', () => {
-        stopPolling();
-        if (hasSeeked) {
-          setUnlocked(false);
-          setVideoEnded(false);
-          setShowDonatePrompt(false);
-          setProgress(0);
-          return;
-        }
-        trackVideoComplete('/raffle');
-        setProgress(1);
-        setUnlocked(true);
-        setVideoEnded(true);
-        setShowDonatePrompt(true);
+        doUnlock();
       });
-
-      player.on('pause', stopPolling);
-      player.on('loaded', updateFromPlayer);
-      player.on('play', updateFromPlayer);
     };
 
-    if (existing) { init(); return; }
-    const script = document.createElement('script');
-    script.id = 'vimeo-player-api';
-    script.src = 'https://player.vimeo.com/api/player.js';
-    script.onload = init;
-    document.body.appendChild(script);
-
-    return () => {
-      stopPolling();
-    };
+    const existingScript = document.getElementById('vimeo-player-api');
+    if (existingScript) {
+      // Script tag exists — but SDK may still be loading
+      if (window.Vimeo) {
+        init();
+      } else {
+        existingScript.addEventListener('load', init, { once: true });
+      }
+    } else {
+      const script = document.createElement('script');
+      script.id = 'vimeo-player-api';
+      script.src = 'https://player.vimeo.com/api/player.js';
+      script.addEventListener('load', init, { once: true });
+      document.body.appendChild(script);
+    }
   }, [isTrackableVimeo, settings.vimeoId]);
 
   const handleRewatch = () => {
     setVideoEnded(false);
+    setUnlocked(false);
+    setProgress(0);
+    unlockedRef.current = false;
     if (playerRef.current) {
       restartPendingRef.current = true;
       playerRef.current.setCurrentTime(0).then(() => playerRef.current.play());
@@ -156,7 +107,8 @@ const RafflePage = ({ onDonateClick }) => {
 
   const handleDonate = () => {
     setShowDonatePrompt(false);
-    if (onDonateClick) onDonateClick(60);
+    if (onDonateForRaffle) onDonateForRaffle(60);
+    else if (onDonateClick) onDonateClick(60);
   };
 
   const handleSkipToDonate = () => {
@@ -212,7 +164,7 @@ const RafflePage = ({ onDonateClick }) => {
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
 
-          {/* HERO header — prominent "Watch and Enter to Win" */}
+          {/* HERO header */}
           <div className="text-center mb-10">
             <div className="inline-block rounded-full border border-[#a93d58] bg-[rgba(93,39,89,0.32)] px-5 py-1.5 text-xs font-extrabold uppercase tracking-[0.24em] text-[#efd37a] mb-6">
               Community Raffle
@@ -264,10 +216,9 @@ const RafflePage = ({ onDonateClick }) => {
             )}
 
             <div className="bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-8 text-center">
-              <p className="text-lg text-white/88 mb-8 max-w-3xl mx-auto">
-                {unlocked
-                  ? "She asked a stranger to walk into a grocery store with her. This is why."
-                  : 'Watch the full video without skipping to unlock your free raffle entry.'}
+              <p className="text-2xl md:text-3xl font-extrabold text-white mb-8 max-w-3xl mx-auto leading-snug">
+                She asked a stranger to walk into a grocery store with her.{" "}
+                <span className="text-[#efd37a]">This is why.</span>
               </p>
 
               {unlocked ? (
@@ -286,12 +237,6 @@ const RafflePage = ({ onDonateClick }) => {
               )}
             </div>
           </section>
-
-          <div className="mb-10 text-center max-w-3xl mx-auto">
-            <p className="text-lg text-white/70 italic leading-relaxed">
-              "She asked a stranger to walk into a grocery store with her. This is why."
-            </p>
-          </div>
 
           {/* FAQ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">

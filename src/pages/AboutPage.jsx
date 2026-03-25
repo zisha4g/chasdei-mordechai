@@ -14,6 +14,22 @@ const AboutPage = () => {
 
   return (
     <div style={{ background: '#0B1A4F', color: '#fff', minHeight: '100vh' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .struggle-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .struggle-text {
+            text-align: center;
+          }
+          .struggle-text .reality-point {
+            justify-content: center;
+          }
+          .struggle-text .blockquote-bar {
+            text-align: left;
+          }
+        }
+      `}</style>
       <Helmet>
         <title>About Us | Chasdei Mordechai</title>
         <meta name="description" content="Learn about our mission to restore dignity to families in our community facing hidden crises." />
@@ -41,7 +57,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      <section style={{ padding: '7rem 6%', background: '#0B1A4F' }}>
+      <section style={{ padding: '4rem 6%', background: '#0B1A4F' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 4rem' }}>
             <div style={{ display: 'inline-block', background: 'rgba(200,20,30,0.12)', color: '#F2DFA8', border: '1px solid rgba(200,20,30,0.30)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', padding: '0.4rem 1rem', borderRadius: '100px', marginBottom: '1.5rem', fontFamily: "'Inter',sans-serif" }}>
@@ -57,10 +73,10 @@ const AboutPage = () => {
         </div>
       </section>
 
-      <section style={{ padding: '7rem 6%', background: '#070F30' }}>
+      <section style={{ padding: '4rem 6%', background: '#070F30' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-            <div>
+          <div className="struggle-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+            <div className="struggle-text">
               <div style={{ display: 'inline-block', background: 'rgba(200,20,30,0.12)', color: '#F2DFA8', border: '1px solid rgba(200,20,30,0.30)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', padding: '0.4rem 1rem', borderRadius: '100px', marginBottom: '1.5rem', fontFamily: "'Inter',sans-serif" }}>
                 The Hidden Reality
               </div>
@@ -71,14 +87,14 @@ const AboutPage = () => {
                 Within our circles:
               </p>
               {realityPoints.map((pt, i) => (
-                <div key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                <div className="reality-point" key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(200,20,30,0.5)', boxShadow: '0 0 8px rgba(200,20,30,0.35)', marginTop: '0.5rem', flexShrink: 0 }}></div>
                   <p style={{ margin: 0, fontSize: '1.05rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.8, fontFamily: "'Inter',sans-serif" }}>
                     {pt.text}
                   </p>
                 </div>
               ))}
-              <div style={{ margin: '2rem 0 0', padding: '1.5rem 2rem', borderLeft: '4px solid #C8141E', background: 'rgba(200,20,30,0.07)', borderRadius: '0 14px 14px 0' }}>
+              <div className="blockquote-bar" style={{ margin: '2rem 0 0', padding: '1.5rem 2rem', borderLeft: '4px solid rgba(200,20,30,0.5)', background: 'rgba(200,20,30,0.07)', borderRadius: '0 14px 14px 0' }}>
                 <p style={{ fontSize: '1.1rem', fontStyle: 'italic', color: '#F2DFA8', fontWeight: 600, margin: 0, lineHeight: 1.7, fontFamily: "'Inter',sans-serif" }}>
                   &quot;This isn't 'out there.' It's right here.&quot;
                 </p>
@@ -96,7 +112,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      <section style={{ padding: '7rem 6%', background: '#0B1A4F' }}>
+      <section style={{ padding: '4rem 6%', background: '#0B1A4F' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', maxWidth: '680px', margin: '0 auto' }}>
             <div style={{ display: 'inline-block', background: 'rgba(200,20,30,0.12)', color: '#F2DFA8', border: '1px solid rgba(200,20,30,0.30)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase', padding: '0.4rem 1rem', borderRadius: '100px', marginBottom: '1.5rem', fontFamily: "'Inter',sans-serif" }}>
@@ -108,7 +124,7 @@ const AboutPage = () => {
             <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.85, marginBottom: '1.2rem', fontFamily: "'Inter',sans-serif" }}>
               We believe in the power of tefillah for every soul in pain. But when our extended family cannot afford bread, rent, or basic groceries, <strong style={{ color: '#fff' }}>Hashem has also given us the tools to help them in a tangible way.</strong>
             </p>
-            <div style={{ width: '56px', height: '3px', background: '#C8141E', borderRadius: '100px', margin: '2rem auto' }}></div>
+            <div style={{ width: '56px', height: '3px', background: 'rgba(200,20,30,0.5)', borderRadius: '100px', margin: '2rem auto' }}></div>
             <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.85, marginBottom: '2rem', fontFamily: "'Inter',sans-serif" }}>
               We don't just feel the pain. <strong style={{ color: '#fff' }}>Together, we relieve it.</strong>
             </p>

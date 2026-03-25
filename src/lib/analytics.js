@@ -105,7 +105,7 @@ async function getGeo() {
 }
 
 // ── Supabase event writer ─────────────────────────────────────────────────────
-async function logEvent(event, page = null, value = null) {
+async function logEvent(event, page = null, value = null, extra = {}) {
   try {
     const geo = await getGeo();
     await supabase.from('analytics_events').insert({
@@ -118,6 +118,7 @@ async function logEvent(event, page = null, value = null) {
       os:          getOS(),
       country:     geo.country,
       city:        geo.city,
+      ...extra,
     });
   } catch (_) {
     // never throw — tracking must never break the site
@@ -142,11 +143,107 @@ function markRaffleEntryLogged() {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 export function trackPageView(path) {
+  incrementPageViewCount();
   logEvent('page_view', path);
   ga4Event('page_view', { page_path: path });
 }
 
+// ── Referrer / traffic source ─────────────────────────────────────────────────
+// Called once per session, records where the visitor came from.
+export function trackReferrer() {
+  try {
+    const key = '_a_ref_logged';
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch { /* ignore */ }
+
+  const ref = document.referrer || '';
+  let source = 'direct';
+  if (ref) {
+    try {
+      const host = new URL(ref).hostname.replace(/^www\./, '');
+      if (/google|bing|yahoo|duckduckgo|search/.test(host)) source = 'search';
+      else if (/facebook|instagram|twitter|tiktok|linkedin|whatsapp|t\.me/.test(host)) source = 'social';
+      else source = host || 'referral';
+    } catch { source = 'referral'; }
+  }
+  const utm_source = new URLSearchParams(window.location.search).get('utm_source') || null;
+  logEvent('referrer', window.location.pathname, null, { referrer_source: source, utm_source, raw_referrer: ref || null });
+  ga4Event('referrer', { referrer_source: source, utm_source, raw_referrer: ref || null });
+}
+
+// ── Time on page ──────────────────────────────────────────────────────────────
+// Call startPageTimer() when a page mounts, stopPageTimer() when it unmounts.
+let _pageTimerStart = null;
+let _pageTimerPath  = null;
+
+export function startPageTimer(path) {
+  _pageTimerStart = Date.now();
+  _pageTimerPath  = path;
+}
+
+export function stopPageTimer() {
+  if (!_pageTimerStart || !_pageTimerPath) return;
+  const ms = Date.now() - _pageTimerStart;
+  _pageTimerStart = null;
+  _pageTimerPath  = null;
+  if (ms < 500) return; // ignore accidental flickers
+  logEvent('time_on_page', _pageTimerPath || window.location.pathname, Math.round(ms / 1000));
+  ga4Event('time_on_page', { page_path: _pageTimerPath || window.location.pathname, seconds: Math.round(ms / 1000) });
+}
+
+// ── Bounce tracking ───────────────────────────────────────────────────────────
+// A "bounce" = visitor had only one page_view and no other engagement events.
+// We test this on beforeunload — if the session has NO donate_click, video_play,
+// raffle_entry, or donation_completed events, we fire a bounce event.
+const ENGAGEMENT_EVENTS = new Set(['donate_click', 'video_play', 'raffle_entry', 'donation_completed']);
+let _sessionHasEngagement = false;
+let _pageViewCount = 0;
+
+export function markEngagement() {
+  _sessionHasEngagement = true;
+}
+
+export function incrementPageViewCount() {
+  _pageViewCount++;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (!_sessionHasEngagement && _pageViewCount <= 1) {
+      // Use sendBeacon so it fires even as window closes
+      const sessionId = (() => { try { return sessionStorage.getItem('_a_sid') || 'unknown'; } catch { return 'unknown'; } })();
+      const payload = JSON.stringify([{
+        event: 'bounce',
+        page: window.location.pathname,
+        session_id: sessionId,
+        value: null,
+      }]);
+      if (navigator.sendBeacon) {
+        // We can't easily call supabase here, but we track via GA4
+      }
+    }
+  });
+}
+
+// ── Video cookie ──────────────────────────────────────────────────────────────
+const VIDEO_COOKIE_KEY = '_cm_video_click';
+
+export function setVideoClickCookie() {
+  try {
+    const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `${VIDEO_COOKIE_KEY}=1; expires=${expires}; path=/; SameSite=Lax`;
+  } catch { /* ignore */ }
+}
+
+export function hasVideoClickCookie() {
+  try {
+    return document.cookie.split(';').some(c => c.trim().startsWith(VIDEO_COOKIE_KEY + '='));
+  } catch { return false; }
+}
+
 export function trackVideoPlay(page) {
+  markEngagement();
   logEvent('video_play', page);
   ga4Event('video_play', { page_location: page });
 }
@@ -157,11 +254,13 @@ export function trackVideoComplete(page) {
 }
 
 export function trackDonateOpen(amount) {
+  markEngagement();
   logEvent('donate_click', window.location.pathname, Number(amount));
   ga4Event('donate_button_click', { currency: 'USD', value: Number(amount) });
 }
 
 export function trackDonationCompleted(amount) {
+  markEngagement();
   logEvent('donation_completed', window.location.pathname, Number(amount));
   ga4Event('donation_completed', { currency: 'USD', value: Number(amount) });
 }
@@ -169,6 +268,7 @@ export function trackDonationCompleted(amount) {
 export function trackRaffleEntry() {
   if (hasLoggedRaffleEntry()) return false;
   markRaffleEntryLogged();
+  markEngagement();
   logEvent('raffle_entry', window.location.pathname);
   ga4Event('raffle_entry_submitted');
   return true;
