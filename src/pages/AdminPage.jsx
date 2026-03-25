@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, X, BarChart2, ExternalLink } from 'lucide-react';
+import { Settings, X, BarChart2, Calendar, ChevronDown, ChevronRight, Monitor, Smartphone } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { DEFAULT_SITE_SETTINGS, fetchLatestSiteSettings } from '@/hooks/useSiteSettings';
 import { GA4_ID } from '@/lib/analytics';
@@ -239,47 +239,148 @@ function SiteSettingsModal({ isOpen, onClose }) {
   );
 }
 
-// ── Analytics full-page panel ──────────────────────────────────────────────────
-function AnalyticsPanel({ isOpen, onClose, entries = [] }) {
-  const [lookerUrl, setLookerUrl] = useState('');
-  const [loading, setLoading] = useState(true);
+// ── Analytics panel helpers (module-level, no React) ─────────────────────────
+function toDateStr(d) { return d.toISOString().slice(0, 10); }
+function daysAgoStr(n) { const d = new Date(); d.setDate(d.getDate() - n); return toDateStr(d); }
 
-  useEffect(() => {
+function fmtDuration(ms) {
+  if (ms <= 0)       return '< 1s';
+  if (ms < 60000)    return `${Math.round(ms / 1000)}s`;
+  if (ms < 3600000)  return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
+  return `${Math.floor(ms / 3600000)}h ${Math.floor((ms % 3600000) / 60000)}m`;
+}
+
+function fmtRelative(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  const d = new Date(iso);
+  return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+const DATE_PRESETS = [
+  { label: 'Today',   days: 0  },
+  { label: '7 days',  days: 7  },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
+];
+
+const EV_ICON  = { page_view: '📄', video_play: '▶️', donate_click: '💛', donation_completed: '✅', raffle_entry: '🎟️' };
+const EV_LABEL = { page_view: 'Page visit', video_play: 'Watched video', donate_click: 'Clicked donate', donation_completed: 'Completed donation', raffle_entry: 'Entered raffle' };
+
+function DeviceIcon({ type }) {
+  if (type === 'mobile') return <Smartphone size={13} className="text-gray-400 shrink-0" />;
+  return <Monitor size={13} className="text-gray-400 shrink-0" />;
+}
+
+// ── Analytics full-page panel ──────────────────────────────────────────────────
+function AnalyticsPanel({ isOpen, onClose }) {
+  const [events,           setEvents]           = useState([]);
+  const [loading,          setLoading]          = useState(true);
+  const [tableError,       setTableError]       = useState(false);
+  const [dateFrom,         setDateFrom]         = useState(() => daysAgoStr(30));
+  const [dateTo,           setDateTo]           = useState(() => toDateStr(new Date()));
+  const [activePreset,     setActivePreset]     = useState(30);
+  const [expandedSession,  setExpandedSession]  = useState(null);
+
+  const applyPreset = (days) => {
+    setActivePreset(days);
+    const today = toDateStr(new Date());
+    setDateFrom(days === 0 ? today : daysAgoStr(days));
+    setDateTo(today);
+  };
+
+  const load = useCallback(async () => {
     if (!isOpen) return;
     setLoading(true);
-    fetchLatestSiteSettings().then(({ data }) => {
-      setLookerUrl(String(data?.looker_studio_url || '').trim());
-      setLoading(false);
-    });
-  }, [isOpen]);
+    setTableError(false);
+    const { data, error: err } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .gte('created_at', dateFrom + 'T00:00:00.000Z')
+      .lte('created_at', dateTo   + 'T23:59:59.999Z')
+      .order('created_at', { ascending: true });
+    setLoading(false);
+    if (err) {
+      if (err.code === '42P01' || String(err.message).includes('does not exist')) setTableError(true);
+      return;
+    }
+    setEvents(data || []);
+  }, [isOpen, dateFrom, dateTo]);
+
+  useEffect(() => { load(); }, [load]);
 
   if (!isOpen) return null;
 
-  // ── Real numbers from your database ──
-  const now = new Date();
-  const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
-  const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-  const totalEntries = entries.length;
-  const weekEntries  = entries.filter(e => new Date(e.created_at) >= ago7).length;
-  const monthEntries = entries.filter(e => new Date(e.created_at) >= ago30).length;
-  const totalRaised  = entries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  // ── Derived stats ──────────────────────────────────────────────────────────
+  const byEvent       = (name) => events.filter(e => e.event === name);
+  const pageViews     = byEvent('page_view');
+  const videoPlays    = byEvent('video_play');
+  const donateClicks  = byEvent('donate_click');
+  const donations     = byEvent('donation_completed');
+  const raffleEntries = byEvent('raffle_entry');
+  const totalRaised   = donations.reduce((s, e) => s + (Number(e.value) || 0), 0);
 
-  // ── Bar chart — entries per day, last 14 days ──
-  const last14 = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - (13 - i));
-    const key = d.toISOString().slice(0, 10);
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const count = entries.filter(e => e.created_at?.slice(0, 10) === key).length;
-    return { label, count };
+  // ── Bar chart: up to 14 evenly-distributed buckets across the date range ──
+  const allDates = (() => {
+    const dates = [];
+    const cur = new Date(dateFrom + 'T12:00:00');
+    const end = new Date(dateTo   + 'T12:00:00');
+    while (cur <= end && dates.length < 200) { dates.push(toDateStr(cur)); cur.setDate(cur.getDate() + 1); }
+    return dates;
+  })();
+  const CHART_N    = Math.min(allDates.length, 14);
+  const chunkSize  = Math.ceil(allDates.length / CHART_N);
+  const chartBars  = Array.from({ length: CHART_N }, (_, i) => {
+    const bucket = new Set(allDates.slice(i * chunkSize, (i + 1) * chunkSize));
+    const label  = new Date(allDates[i * chunkSize] + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const count  = events.filter(e => bucket.has(e.created_at?.slice(0, 10))).length;
+    return { key: allDates[i * chunkSize], label, count };
   });
-  const barMax = Math.max(1, ...last14.map(d => d.count));
+  const barMax = Math.max(1, ...chartBars.map(b => b.count));
+
+  // ── Top pages ──
+  const pageCounts = {};
+  pageViews.forEach(e => { const p = e.page || '/'; pageCounts[p] = (pageCounts[p] || 0) + 1; });
+  const topPages = Object.entries(pageCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
+  const pageMax  = topPages[0]?.[1] || 1;
+
+  // ── Session grouping (visitor logs) ──
+  const sessionMap = {};
+  events.forEach(e => {
+    if (!e.session_id) return;
+    if (!sessionMap[e.session_id]) {
+      sessionMap[e.session_id] = {
+        session_id:  e.session_id,
+        device_type: e.device_type || 'desktop',
+        browser:     e.browser || 'Unknown',
+        os:          e.os || null,
+        country:     e.country || null,
+        city:        e.city    || null,
+        events:      [],
+      };
+    }
+    sessionMap[e.session_id].events.push(e);
+  });
+  const sessions = Object.values(sessionMap)
+    .sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at))
+    .slice(0, 100);
+
+  const funnelMax   = pageViews.length || 1;
+  const funnelSteps = [
+    { label: 'Visited Site',   count: pageViews.length,     color: 'bg-indigo-500',  prev: null                },
+    { label: 'Watched Video',  count: videoPlays.length,    color: 'bg-sky-500',     prev: pageViews.length    },
+    { label: 'Clicked Donate', count: donateClicks.length,  color: 'bg-violet-500',  prev: pageViews.length    },
+    { label: 'Donated',        count: donations.length,     color: 'bg-emerald-500', prev: donateClicks.length },
+    { label: 'Entered Raffle', count: raffleEntries.length, color: 'bg-amber-500',   prev: donations.length    },
+  ];
 
   const statCards = [
-    { label: 'Total Entries',  value: totalEntries,                    sub: 'All time',       bg: 'bg-indigo-50',  border: 'border-indigo-200', text: 'text-indigo-700',  num: 'text-indigo-900' },
-    { label: 'This Week',      value: weekEntries,                     sub: 'Last 7 days',    bg: 'bg-sky-50',     border: 'border-sky-200',    text: 'text-sky-700',     num: 'text-sky-900'    },
-    { label: 'This Month',     value: monthEntries,                    sub: 'Last 30 days',   bg: 'bg-violet-50',  border: 'border-violet-200', text: 'text-violet-700',  num: 'text-violet-900' },
-    { label: 'Total Raised',   value: `$${totalRaised.toLocaleString()}`, sub: 'All donations', bg: 'bg-emerald-50', border: 'border-emerald-200',text: 'text-emerald-700', num: 'text-emerald-900'},
+    { label: 'Site Visitors', value: pageViews.length,             sub: `${sessions.length} unique sessions`,                       bg: 'bg-indigo-50',  border: 'border-indigo-200',  text: 'text-indigo-700',  num: 'text-indigo-900'  },
+    { label: 'Video Plays',   value: videoPlays.length,            sub: `${sessions.filter(s => s.events.some(e => e.event === 'video_play')).length} viewers`, bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', num: 'text-sky-900' },
+    { label: 'Donations',     value: donations.length,             sub: `$${totalRaised.toLocaleString()} raised`,                   bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', num: 'text-emerald-900' },
+    { label: 'Raffle Entries',value: raffleEntries.length,         sub: `${donateClicks.length} clicked donate`,                      bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   num: 'text-amber-900'   },
   ];
 
   return (
@@ -294,160 +395,289 @@ function AnalyticsPanel({ isOpen, onClose, entries = [] }) {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Website Activity</h1>
-              <p className="text-xs text-gray-400">Real numbers from your site</p>
+              <p className="text-xs text-gray-400">Live data from your database</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition"
-          >
-            <X size={15} /> Close
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-
-        {/* ── Live badge notice ── */}
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-            Live data — updated in real time
-          </span>
-          <span className="text-xs text-gray-400">Numbers below come directly from your database.</span>
+          <div className="flex items-center gap-2">
+            <button onClick={load} className="text-xs text-gray-500 hover:text-gray-800 border border-gray-200 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition">↻ Refresh</button>
+            <button type="button" onClick={onClose} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition">
+              <X size={15} /> Close
+            </button>
+          </div>
         </div>
 
-        {/* ── Stat cards ── */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-600 mb-3">Raffle &amp; Donations</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {statCards.map(({ label, value, sub, bg, border, text, num }) => (
-              <div key={label} className={`rounded-2xl border ${bg} ${border} px-5 py-5`}>
-                <p className={`text-3xl font-extrabold ${num}`}>{value}</p>
-                <p className={`text-sm font-semibold mt-1 ${text}`}>{label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Bar chart ── */}
-        <section>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-sm font-bold text-gray-800">Entries Per Day</h2>
-                <p className="text-xs text-gray-400">Last 14 days — how many people entered the raffle each day</p>
-              </div>
-              <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">Live</span>
-            </div>
-            <div className="flex items-end gap-1.5 h-36">
-              {last14.map(({ label, count }) => (
-                <div key={label} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                  {count > 0 && <span className="text-xs font-bold text-indigo-700">{count}</span>}
-                  <div
-                    className="w-full rounded-t transition-all"
-                    style={{
-                      height: `${Math.max(count === 0 ? 3 : 6, Math.round((count / barMax) * 112))}px`,
-                      background: count === 0
-                        ? '#e0e7ff'
-                        : `linear-gradient(to top, #4f46e5, #818cf8)`,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-1.5 mt-2">
-              {last14.map(({ label }, i) => (
-                <div key={label} className="flex-1 text-center">
-                  <span className="text-[9px] text-gray-400">{i % 2 === 0 ? label : ''}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Full visitor funnel (Looker Studio) ── */}
-        <section>
-          <div className="flex items-start justify-between mb-4 gap-4">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800">Full Visitor Report</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                How many people visited the site, watched the video, clicked donate, and completed a gift.
-              </p>
-            </div>
-            {lookerUrl && (
-              <a
-                href={lookerUrl.replace('/embed/', '/')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition"
+        {/* ── Date range bar ── */}
+        <div className="border-t border-gray-100 bg-gray-50">
+          <div className="max-w-5xl mx-auto px-6 py-2.5 flex flex-wrap items-center gap-2">
+            <Calendar size={13} className="text-gray-400 shrink-0" />
+            {DATE_PRESETS.map(({ label, days }) => (
+              <button
+                key={label}
+                onClick={() => applyPreset(days)}
+                className={`text-xs font-semibold px-3 py-1 rounded-full border transition ${
+                  activePreset === days
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'text-gray-600 border-gray-200 bg-white hover:bg-gray-100'
+                }`}
               >
-                <ExternalLink size={12} /> Open full screen
-              </a>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-sm text-gray-400">Loading…</div>
-          ) : lookerUrl ? (
-            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-              <iframe
-                src={lookerUrl}
-                title="Analytics Dashboard"
-                className="w-full"
-                style={{ height: '680px', border: 'none' }}
-                allowFullScreen
+                {label}
+              </button>
+            ))}
+            <span className="text-gray-300 text-xs mx-1">|</span>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo}
+                onChange={e => { setDateFrom(e.target.value); setActivePreset(null); }}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              />
+              <span className="text-xs text-gray-400">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom}
+                max={toDateStr(new Date())}
+                onChange={e => { setDateTo(e.target.value); setActivePreset(null); }}
+                className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
               />
             </div>
-          ) : (
-            <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-8">
-              <div className="max-w-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl">📊</span>
-                  <p className="text-base font-bold text-gray-800">Connect your visitor dashboard</p>
+          </div>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-24 text-gray-400 text-sm">Loading analytics…</div>
+      )}
+
+      {!loading && tableError && (
+        <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+          <div className="text-5xl mb-4">🛠️</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Analytics table not set up yet</h2>
+          <p className="text-sm text-gray-500 mb-3">Run both migrations in your Supabase SQL Editor:</p>
+          <p className="text-xs font-mono bg-gray-100 rounded px-3 py-1.5 inline-block mb-1">supabase/migrations/20260324_create_analytics_events.sql</p><br />
+          <p className="text-xs font-mono bg-gray-100 rounded px-3 py-1.5 inline-block">supabase/migrations/20260325_add_session_to_analytics.sql</p>
+        </div>
+      )}
+
+      {!loading && !tableError && (
+        <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+
+          {/* ── Live badge ── */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              Live data
+            </span>
+            <span className="text-xs text-gray-400">{events.length.toLocaleString()} events · {sessions.length} sessions in this range</span>
+          </div>
+
+          {/* ── Stat cards ── */}
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Overview</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {statCards.map(({ label, value, sub, bg, border, text, num }) => (
+                <div key={label} className={`rounded-2xl border ${bg} ${border} px-5 py-5`}>
+                  <p className={`text-3xl font-extrabold ${num}`}>{value}</p>
+                  <p className={`text-sm font-semibold mt-1 ${text}`}>{label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
                 </div>
-                <p className="text-sm text-gray-500 mb-6">
-                  Once connected, you'll see exact numbers here — how many people visited each page, how many watched the video, how many clicked donate, and how many finished a donation.
-                </p>
-                <ol className="space-y-3 mb-6">
-                  {[
-                    'Go to Looker Studio (link below) and create a new report using your Google Analytics data.',
-                    'Click Share → Embed report and copy the embed URL.',
-                    'Open Site Settings (gear icon ⚙️ in the top right) and paste the URL under "Looker Studio Embed URL".',
-                    'Save — your full visitor report will appear here instantly.',
-                  ].map((text, i) => (
-                    <li key={i} className="flex gap-3 items-start">
-                      <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                      <p className="text-sm text-gray-600">{text}</p>
-                    </li>
-                  ))}
-                </ol>
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href="https://lookerstudio.google.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition"
-                  >
-                    <ExternalLink size={14} /> Open Looker Studio
-                  </a>
-                  <a
-                    href="https://analytics.google.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-4 py-2.5 rounded-xl transition"
-                  >
-                    <ExternalLink size={14} /> Open Google Analytics
-                  </a>
-                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Conversion funnel ── */}
+          <section>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h2 className="text-sm font-bold text-gray-800 mb-1">Conversion Funnel</h2>
+              <p className="text-xs text-gray-400 mb-5">How visitors moved through your site</p>
+              <div className="space-y-3">
+                {funnelSteps.map(({ label, count, color, prev }) => {
+                  const widthPct = funnelMax > 0 ? Math.max(Math.round((count / funnelMax) * 100), count > 0 ? 2 : 0) : 0;
+                  const dropOff  = prev != null && prev > 0 ? Math.round((1 - count / prev) * 100) : null;
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <span className="w-32 text-xs font-semibold text-gray-600 text-right shrink-0">{label}</span>
+                      <div className="flex-1 h-8 bg-gray-100 rounded-lg overflow-hidden">
+                        <div className={`h-full ${color} rounded-lg flex items-center pl-3 transition-all`} style={{ width: `${widthPct}%` }}>
+                          {widthPct > 8 && <span className="text-xs font-bold text-white">{count.toLocaleString()}</span>}
+                        </div>
+                      </div>
+                      <span className="w-14 text-xs font-bold text-gray-700 text-right shrink-0">{count.toLocaleString()}</span>
+                      <span className="w-14 text-xs text-right shrink-0">{dropOff !== null ? <span className="text-red-400">-{dropOff}%</span> : null}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
-        </section>
+          </section>
 
-      </div>
+          {/* ── Daily activity bar chart ── */}
+          <section>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-800">Daily Activity</h2>
+                  <p className="text-xs text-gray-400">All events in selected range</p>
+                </div>
+                <span className="text-xs font-semibold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">Live</span>
+              </div>
+              <div className="flex items-end gap-1.5 h-36">
+                {chartBars.map(({ key, label, count }) => (
+                  <div key={key} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                    {count > 0 && <span className="text-xs font-bold text-indigo-700">{count}</span>}
+                    <div
+                      className="w-full rounded-t transition-all"
+                      style={{
+                        height: `${Math.max(count === 0 ? 3 : 6, Math.round((count / barMax) * 112))}px`,
+                        background: count === 0 ? '#e0e7ff' : 'linear-gradient(to top, #4f46e5, #818cf8)',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1.5 mt-2">
+                {chartBars.map(({ key, label }, i) => (
+                  <div key={key} className="flex-1 text-center">
+                    <span className="text-[9px] text-gray-400">{i % 2 === 0 ? label : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Top pages ── */}
+          {topPages.length > 0 && (
+            <section>
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h2 className="text-sm font-bold text-gray-800 mb-1">Top Pages</h2>
+                <p className="text-xs text-gray-400 mb-5">Most visited pages in selected range</p>
+                <div className="space-y-2.5">
+                  {topPages.map(([path, count]) => (
+                    <div key={path} className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-gray-600 w-36 truncate shrink-0">{path}</span>
+                      <div className="flex-1 h-5 bg-gray-100 rounded">
+                        <div className="h-full bg-sky-400 rounded" style={{ width: `${Math.round((count / pageMax) * 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-bold text-gray-700 w-10 text-right shrink-0">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── Visitor logs ── */}
+          <section>
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-800">Visitor Logs</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">Every visitor's device, location, and step-by-step journey — click a row to expand</p>
+                </div>
+                <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full shrink-0">{sessions.length} sessions</span>
+              </div>
+
+              {sessions.length === 0 ? (
+                <div className="px-6 py-10 text-center text-sm text-gray-400">
+                  {events.length === 0
+                    ? 'No visitor data in this date range.'
+                    : 'Session tracking not yet active — run the migration to see detailed visitor logs.'}
+                </div>
+              ) : (
+                <>
+                  {/* header row */}
+                  <div className="hidden sm:flex items-center gap-3 px-6 py-2 bg-gray-50 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    <span className="w-24 shrink-0">Time</span>
+                    <span className="w-36 shrink-0">Device</span>
+                    <span className="w-36 shrink-0">Location</span>
+                    <span className="flex-1">Journey</span>
+                    <span className="w-28 text-right shrink-0">Events · Duration</span>
+                    <span className="w-4 shrink-0" />
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    {sessions.map((s) => {
+                      const first     = s.events[0];
+                      const last      = s.events[s.events.length - 1];
+                      const duration  = new Date(last.created_at) - new Date(first.created_at);
+                      const isOpen    = expandedSession === s.session_id;
+                      const pages     = [...new Map(s.events.filter(e => e.event === 'page_view').map(e => [e.page, e])).keys()];
+
+                      return (
+                        <div key={s.session_id}>
+                          <button
+                            onClick={() => setExpandedSession(isOpen ? null : s.session_id)}
+                            className="w-full text-left px-6 py-3.5 hover:bg-indigo-50/40 transition flex items-center gap-3"
+                          >
+                            {/* Time */}
+                            <span className="w-24 text-xs text-gray-500 shrink-0">{fmtRelative(first.created_at)}</span>
+
+                            {/* Device + browser + OS */}
+                            <span className="w-36 flex items-center gap-1.5 shrink-0 min-w-0">
+                              <DeviceIcon type={s.device_type} />
+                              <span className="text-xs text-gray-600 truncate">
+                                {s.browser}{s.os ? ` / ${s.os}` : ''}
+                              </span>
+                            </span>
+
+                            {/* Location */}
+                            <span className="w-36 text-xs text-gray-500 truncate shrink-0">
+                              {s.city && s.country ? `${s.city}, ${s.country}` : s.country || <span className="text-gray-300">—</span>}
+                            </span>
+
+                            {/* Journey summary (pages visited in order) */}
+                            <span className="flex-1 text-xs text-gray-400 truncate hidden sm:block">
+                              {pages.length > 0 ? pages.join(' → ') : (first.page || '—')}
+                            </span>
+
+                            {/* Count + duration */}
+                            <span className="w-28 text-xs text-gray-400 text-right shrink-0">
+                              {s.events.length} events · {fmtDuration(duration)}
+                            </span>
+
+                            {/* Expand chevron */}
+                            <span className="w-4 text-gray-300 shrink-0">
+                              {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </span>
+                          </button>
+
+                          {/* ── Expanded event timeline ── */}
+                          {isOpen && (
+                            <div className="px-6 pb-5 pt-3 bg-indigo-50/30 border-t border-indigo-100">
+                              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-2">
+                                {s.events.map((ev, i) => (
+                                  <div key={i} className="flex items-start gap-3 text-xs">
+                                    <span className="text-gray-400 font-mono w-20 shrink-0 pt-px">
+                                      {new Date(ev.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                    <span className="w-4 shrink-0">{EV_ICON[ev.event] || '•'}</span>
+                                    <span className="font-semibold text-gray-700">{EV_LABEL[ev.event] || ev.event}</span>
+                                    {ev.page && <span className="text-indigo-400 font-mono">{ev.page}</span>}
+                                    {ev.value != null && <span className="text-emerald-600 font-bold ml-auto shrink-0">${Number(ev.value).toLocaleString()}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+
+          {events.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-3xl mb-3">📊</p>
+              <p className="text-sm">No events in this date range yet.</p>
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
   );
 }
@@ -792,7 +1022,7 @@ function AdminPanel({ onLogout }) {
       )}
 
       <SiteSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <AnalyticsPanel isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} entries={entries} />
+      <AnalyticsPanel isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
     </div>
   );
 }
