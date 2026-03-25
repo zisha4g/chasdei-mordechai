@@ -266,8 +266,8 @@ const DATE_PRESETS = [
   { label: '90 days', days: 90 },
 ];
 
-const EV_ICON  = { page_view: '📄', video_play: '▶️', donate_click: '💛', donation_completed: '✅', raffle_entry: '🎟️' };
-const EV_LABEL = { page_view: 'Page visit', video_play: 'Watched video', donate_click: 'Clicked donate', donation_completed: 'Completed donation', raffle_entry: 'Entered raffle' };
+const EV_ICON  = { page_view: '📄', video_play: '▶️', video_complete: '🏁', donate_click: '💛', donation_completed: '✅', raffle_entry: '🎟️' };
+const EV_LABEL = { page_view: 'Page visit', video_play: 'Watched video', video_complete: 'Video ended', donate_click: 'Clicked donate', donation_completed: 'Completed donation', raffle_entry: 'Entered raffle' };
 
 function DeviceIcon({ type }) {
   if (type === 'mobile') return <Smartphone size={13} className="text-gray-400 shrink-0" />;
@@ -367,20 +367,27 @@ function AnalyticsPanel({ isOpen, onClose }) {
     .sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at))
     .slice(0, 100);
 
-  const funnelMax   = pageViews.length || 1;
+  const uniqueVisitors = sessions.length;
+  const uniqueSessionsForEvent = (name) => sessions.filter(s => s.events.some(e => e.event === name)).length;
+  const uniqueVideoViewers = uniqueSessionsForEvent('video_play');
+  const uniqueDonateClickers = uniqueSessionsForEvent('donate_click');
+  const uniqueDonors = uniqueSessionsForEvent('donation_completed');
+  const uniqueRaffleEntrants = uniqueSessionsForEvent('raffle_entry');
+
+  const funnelMax   = uniqueVisitors || 1;
   const funnelSteps = [
-    { label: 'Visited Site',   count: pageViews.length,     color: 'bg-indigo-500',  prev: null                },
-    { label: 'Watched Video',  count: videoPlays.length,    color: 'bg-sky-500',     prev: pageViews.length    },
-    { label: 'Clicked Donate', count: donateClicks.length,  color: 'bg-violet-500',  prev: pageViews.length    },
-    { label: 'Donated',        count: donations.length,     color: 'bg-emerald-500', prev: donateClicks.length },
-    { label: 'Entered Raffle', count: raffleEntries.length, color: 'bg-amber-500',   prev: donations.length    },
+    { label: 'Visited Site',   count: uniqueVisitors,      color: 'bg-indigo-500',  prev: null                   },
+    { label: 'Watched Video',  count: uniqueVideoViewers,  color: 'bg-sky-500',     prev: uniqueVisitors         },
+    { label: 'Clicked Donate', count: uniqueDonateClickers,color: 'bg-violet-500',  prev: uniqueVideoViewers     },
+    { label: 'Donated',        count: uniqueDonors,        color: 'bg-emerald-500', prev: uniqueDonateClickers   },
+    { label: 'Entered Raffle', count: uniqueRaffleEntrants,color: 'bg-amber-500',   prev: uniqueDonors           },
   ];
 
   const statCards = [
-    { label: 'Site Visitors', value: pageViews.length,             sub: `${sessions.length} unique sessions`,                       bg: 'bg-indigo-50',  border: 'border-indigo-200',  text: 'text-indigo-700',  num: 'text-indigo-900'  },
-    { label: 'Video Plays',   value: videoPlays.length,            sub: `${sessions.filter(s => s.events.some(e => e.event === 'video_play')).length} viewers`, bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', num: 'text-sky-900' },
-    { label: 'Donations',     value: donations.length,             sub: `$${totalRaised.toLocaleString()} raised`,                   bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', num: 'text-emerald-900' },
-    { label: 'Raffle Entries',value: raffleEntries.length,         sub: `${donateClicks.length} clicked donate`,                      bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   num: 'text-amber-900'   },
+    { label: 'Site Visitors', value: uniqueVisitors,               sub: `${pageViews.length} page views`,                           bg: 'bg-indigo-50',  border: 'border-indigo-200',  text: 'text-indigo-700',  num: 'text-indigo-900'  },
+    { label: 'Video Plays',   value: uniqueVideoViewers,           sub: `${videoPlays.length} plays total`,                         bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', num: 'text-sky-900' },
+    { label: 'Donations',     value: uniqueDonors,                 sub: `$${totalRaised.toLocaleString()} raised`,                   bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', num: 'text-emerald-900' },
+    { label: 'Raffle Entries',value: uniqueRaffleEntrants,         sub: `${donateClicks.length} clicks total`,                       bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   num: 'text-amber-900'   },
   ];
 
   return (

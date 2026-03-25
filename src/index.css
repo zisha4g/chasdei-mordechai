@@ -124,6 +124,7 @@ iframe[src*="donate.donorfuse.com"] {
   .site-page {
     background: #0B1A4F;
     color: #f8fafc;
+    padding-top: 8px;
   }
 
   .site-shell {

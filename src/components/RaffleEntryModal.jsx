@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useRaffle } from '@/contexts/RaffleContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { trackRaffleEntry } from '@/lib/analytics';
+import { hasRaffleEntryBeenLogged, trackRaffleEntry } from '@/lib/analytics';
 
 const buildFullAddress = ({ addressLine1, city, state, postalCode }) => {
   const street = addressLine1.trim();
@@ -39,6 +39,15 @@ const RaffleEntryModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (hasRaffleEntryBeenLogged()) {
+      toast({
+        title: 'Already Entered',
+        description: 'You already submitted a raffle entry in this session.',
+      });
+      closeRaffle();
+      return;
+    }
 
     const fullAddress = buildFullAddress(formData);
     

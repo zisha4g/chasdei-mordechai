@@ -4,7 +4,7 @@ import { X, Heart, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { trackDonateOpen, trackDonationCompleted } from '@/lib/analytics';
+import { hasRaffleEntryBeenLogged, trackDonateOpen, trackDonationCompleted, trackRaffleEntry } from '@/lib/analytics';
 
 const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   const { toast } = useToast();
@@ -27,9 +27,9 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   }, [isOpen, refresh]);
 
   const amounts = [
-    { value: 12, label: "One Child's Peace" },
+    { value: 12, label: "One Child's Shabbos" },
     { value: 60, label: "Fill the Fridge" },
-    { value: 120, label: "Restore the Table" },
+    { value: 120, label: "Feed an Entire Family" },
   ];
 
   const handleInputChange = (e) => {
@@ -71,6 +71,9 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       const didDonate = result === true || result?.success === true || result?.donated === true;
       if (didDonate) {
         trackDonationCompleted(amount);
+        if (!hasRaffleEntryBeenLogged()) {
+          trackRaffleEntry();
+        }
         onSuccess({ firstName: formData.firstName, amount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }
@@ -100,13 +103,15 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
             {/* Amount Selection */}
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Select Amount</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {amounts.map((preset) => (
                   <button
                     key={preset.value}
                     type="button"
                     onClick={() => setAmount(preset.value)}
                     className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1 ${
+                      preset.value === 120 ? 'col-span-2 sm:col-span-1' : ''
+                    } ${
                       amount === preset.value
                         ? 'border-primary bg-primary/5 text-primary scale-[1.02]'
                         : 'border-gray-200 text-gray-600 hover:border-primary/50 hover:bg-gray-50'
@@ -134,7 +139,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
 
             {/* Donor Details */}
             <div className="space-y-4 pt-4 border-t border-gray-100">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                   <input type="text" id="firstName" name="firstName" required value={formData.firstName} onChange={handleInputChange}
@@ -168,7 +173,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
               {isSubmitting ? (
                 <><Loader2 className="mr-2 animate-spin" size={20} /> Opening…</>
               ) : (
-                `Continue to Donate $${amount}`
+                `Donate & Enter Raffle $${amount}`
               )}
             </Button>
           </form>

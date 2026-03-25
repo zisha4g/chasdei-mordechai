@@ -68,11 +68,13 @@ const ContactPage = () => {
       icon: Mail,
       label: 'Email',
       value: 'office@chasdeimordechai.org',
+      href: 'mailto:office@chasdeimordechai.org',
     },
     {
       icon: Phone,
       label: 'Phone',
       value: '(845) 474-8585',
+      href: 'tel:+18454748585',
     },
     {
       icon: MapPin,
@@ -117,7 +119,11 @@ const ContactPage = () => {
                       </div>
                       <div>
                         <h3 className="mb-1 font-semibold text-white">{info.label}</h3>
-                        <p className="text-white/88">{info.value}</p>
+                        {info.href ? (
+                          <a href={info.href} className="text-white/88 underline decoration-white/25 underline-offset-4 hover:text-[#efd37a]">{info.value}</a>
+                        ) : (
+                          <p className="text-white/88">{info.value}</p>
+                        )}
                       </div>
                     </div>
                   );

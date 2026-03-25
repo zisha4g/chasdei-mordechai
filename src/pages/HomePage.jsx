@@ -95,12 +95,12 @@ const HomePage = ({ onDonateClick }) => {
 
           <div style={{display:'flex', gap:'1rem', flexWrap:'wrap', alignItems:'center', justifyContent:'center'}}>
             <button
-              onClick={() => setShowVideoChoice(true)}
+              onClick={() => navigate('/raffle')}
               style={{display:'inline-block', background:'rgba(200,20,30,0.15)', border:'1.5px solid rgba(200,20,30,0.45)', color:'#F2DFA8', fontSize:'0.95rem', fontWeight:900, letterSpacing:'1.5px', textTransform:'uppercase', padding:'1rem 2.5rem', borderRadius:'100px', cursor:'pointer', transition:'all 0.22s ease', whiteSpace:'nowrap', fontFamily:"'Inter',sans-serif"}}
               onMouseEnter={e => { e.currentTarget.style.background='rgba(200,20,30,0.28)'; e.currentTarget.style.borderColor='rgba(200,20,30,0.7)'; e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 12px 40px rgba(200,20,30,0.2)'; }}
               onMouseLeave={e => { e.currentTarget.style.background='rgba(200,20,30,0.15)'; e.currentTarget.style.borderColor='rgba(200,20,30,0.45)'; e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow=''; }}
             >
-              THE ANXIETY IS REAL.
+              ANXIETY IS REAL.
             </button>
           </div>
         </div>
@@ -127,16 +127,17 @@ const HomePage = ({ onDonateClick }) => {
           </div>
 
           {/* Tier cards */}
-          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1.5rem', marginBottom:'3.5rem'}}>
+          <div className="grid grid-cols-2 md:grid-cols-3" style={{gap:'1.5rem', marginBottom:'3.5rem'}}>
             {[
               { amount: 12, title: "One Child's Peace", desc: 'A lechtiga Shabbos meal for little Chany.' },
               { amount: 60, title: 'Fill the Fridge', desc: 'Proteins and dairy for the week.', popular: true },
               { amount: 120, title: 'Restore the Whole Table', desc: 'A full Shabbos for a family of eight.' },
-            ].map((tier) => {
+            ].map((tier, idx) => {
               const isSel = selectedAmount === tier.amount;
               return (
                 <div
                   key={tier.amount}
+                  className={idx === 2 ? 'col-span-2 md:col-span-1' : ''}
                   onClick={() => handleSelectAmount(tier.amount)}
                   style={{background: isSel ? 'rgba(242,223,168,0.08)' : 'rgba(255,255,255,0.06)', border: isSel ? '1.5px solid #F2DFA8' : '1.5px solid rgba(255,255,255,0.10)', borderRadius:'22px', padding:'2.5rem 2rem', cursor:'pointer', transition:'all 0.25s ease', position:'relative', boxShadow: isSel ? '0 0 0 3px rgba(242,223,168,0.16), 0 20px 60px rgba(0,0,0,0.28)' : 'none'}}
                   onMouseEnter={e => { if (!isSel) { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.borderColor='#F2DFA8'; e.currentTarget.style.transform='translateY(-8px)'; e.currentTarget.style.boxShadow='0 24px 60px rgba(0,0,0,0.35)'; } }}
@@ -158,7 +159,7 @@ const HomePage = ({ onDonateClick }) => {
           {/* Chaim's copy */}
           <div style={{maxWidth:'680px', margin:'0 auto 3rem', textAlign:'center'}}>
             <p style={{color:'rgba(255,255,255,0.65)', fontSize:'1.05rem', lineHeight:1.85, marginBottom:'0.75rem', fontFamily:"'Inter',sans-serif"}}>
-              Chaim's <em>harchavas hadaas</em> hangs by a thread.
+              <em style={{color:'#F2DFA8', fontStyle:'normal'}}>Chaim's harchavas hadaas</em> hangs by a thread.
             </p>
             <p style={{color:'rgba(255,255,255,0.65)', fontSize:'1.05rem', lineHeight:1.85, margin:0, fontFamily:"'Inter',sans-serif"}}>
               Your generosity doesn't just put food on a table. It restores <em>kavod Shabbos</em>. It transforms their week.
@@ -185,9 +186,8 @@ const HomePage = ({ onDonateClick }) => {
               onMouseEnter={e => { e.currentTarget.style.background='#E5CA7A'; e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 16px 48px rgba(0,0,0,0.3)'; }}
               onMouseLeave={e => { e.currentTarget.style.background='#F2DFA8'; e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.22)'; }}
             >
-              Donate Now →
+              YES. I WILL BE THE ANSWER.
             </button>
-            <p style={{color:'rgba(255,255,255,0.28)', fontSize:'0.78rem', marginTop:'1rem', fontFamily:"'Inter',sans-serif"}}>🔒 Secure &amp; encrypted · Tax-deductible</p>
           </div>
 
         </div>

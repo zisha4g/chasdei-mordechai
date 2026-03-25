@@ -24,6 +24,7 @@ import DonatePage from '@/pages/DonatePage';
 import AboutPage from '@/pages/AboutPage';
 import RafflePage from '@/pages/RafflePage';
 import ContactPage from '@/pages/ContactPage';
+import ThankYouPage from '@/pages/ThankYouPage';
 import AdminPage from '@/pages/AdminPage';
 import DonationForm from '@/components/DonationForm';
 import DonationModal from '@/components/DonationModal';
@@ -66,6 +67,7 @@ function App() {
                 <Route path="/about-us" element={<AboutPage onDonateClick={openDonationForm} />} />
                 <Route path="/raffle" element={<RafflePage onDonateClick={openDonationForm} />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/thank-you" element={<ThankYouPage />} />
                 <Route path="/about" element={<Navigate to="/about-us" replace />} />
                 <Route path="/gallery" element={<Navigate to="/" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

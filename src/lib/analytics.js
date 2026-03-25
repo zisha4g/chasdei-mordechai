@@ -17,6 +17,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 export const GA4_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID || '';
 
 let ga4Initialized = false;
+const RAFFLE_ENTRY_SESSION_KEY = '_a_raffle_entry_logged';
 
 // ── GA4 (silent background) ───────────────────────────────────────────────────
 export function initGA4() {
@@ -123,6 +124,22 @@ async function logEvent(event, page = null, value = null) {
   }
 }
 
+function hasLoggedRaffleEntry() {
+  try {
+    return sessionStorage.getItem(RAFFLE_ENTRY_SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markRaffleEntryLogged() {
+  try {
+    sessionStorage.setItem(RAFFLE_ENTRY_SESSION_KEY, '1');
+  } catch {
+    // ignore sessionStorage failures
+  }
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 export function trackPageView(path) {
   logEvent('page_view', path);
@@ -132,6 +149,11 @@ export function trackPageView(path) {
 export function trackVideoPlay(page) {
   logEvent('video_play', page);
   ga4Event('video_play', { page_location: page });
+}
+
+export function trackVideoComplete(page) {
+  logEvent('video_complete', page);
+  ga4Event('video_complete', { page_location: page });
 }
 
 export function trackDonateOpen(amount) {
@@ -145,8 +167,15 @@ export function trackDonationCompleted(amount) {
 }
 
 export function trackRaffleEntry() {
+  if (hasLoggedRaffleEntry()) return false;
+  markRaffleEntryLogged();
   logEvent('raffle_entry', window.location.pathname);
   ga4Event('raffle_entry_submitted');
+  return true;
+}
+
+export function hasRaffleEntryBeenLogged() {
+  return hasLoggedRaffleEntry();
 }
 
 export function trackEvent(eventName, params = {}) {

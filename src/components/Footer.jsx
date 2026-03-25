@@ -23,7 +23,7 @@ const Footer = ({ onDonateClick }) => {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
           <div className="space-y-4">
             <div className="font-display text-[2rem] font-semibold uppercase tracking-[0.03em] text-white">
-              Chasdei Mordechai
+              Chasdei <span style={{ color: '#F2DFA8' }}>Mordechai</span>
             </div>
             <p className="max-w-xs text-sm leading-8 text-white/60">
               Restoring dignity. Filling tables.<br />
@@ -35,7 +35,7 @@ const Footer = ({ onDonateClick }) => {
                 onClick={() => onDonateClick(60)}
                 className="mt-2 rounded-full border border-[#e8cc74] px-6 py-2 text-sm font-extrabold uppercase tracking-[0.08em] text-[#efd37a] transition-colors hover:bg-[#efd37a] hover:text-[#091031]"
               >
-                Donate Now
+                YES. I WILL BE THE ANSWER.
               </button>
             )}
           </div>

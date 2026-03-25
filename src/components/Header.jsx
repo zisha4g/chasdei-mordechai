@@ -30,7 +30,7 @@ const Header = ({ onDonateClick }) => {
   return (
     <header
       className="fixed top-0 z-40 w-full transition-all duration-300"
-      style={{background:'rgba(7,15,48,0.97)', backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', borderBottom:'1px solid rgba(255,255,255,0.10)', height:'72px', display:'flex', alignItems:'center'}}
+      style={{background:'rgba(7,15,48,0.97)', backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', borderBottom:'1px solid rgba(255,255,255,0.10)', height:'72px', display:'flex', alignItems:'center', boxShadow:'0 4px 22px rgba(0,0,0,0.12)'}}
     >
       <nav className="w-full px-[6%] flex items-center justify-between">
         <Link to="/" className="flex items-center">
@@ -74,7 +74,7 @@ const Header = ({ onDonateClick }) => {
               className="rounded-full bg-transparent transition-all hover:-translate-y-0.5 hover:bg-[#F2DFA8] hover:text-[#0B1A4F]"
               style={{color:'#F2DFA8', border:'1.5px solid #F2DFA8', fontSize:'0.82rem', fontWeight:800, letterSpacing:'1px', textTransform:'uppercase', padding:'0.58rem 1.5rem'}}
             >
-              Donate Now
+              Donate &amp; Enter Raffle
             </Button>
           </div>
 
@@ -125,7 +125,7 @@ const Header = ({ onDonateClick }) => {
               className="mt-4 w-full rounded-full bg-transparent py-6 text-base font-extrabold uppercase text-[#F2DFA8]"
               style={{border:'1.5px solid #F2DFA8', letterSpacing:'1px'}}
             >
-              Donate Now
+              Donate &amp; Enter Raffle
             </Button>
           </div>
         )}
