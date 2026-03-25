@@ -33,7 +33,6 @@ import ThankYouPage from '@/pages/ThankYouPage';
 import AdminPage from '@/pages/AdminPage';
 import AnalyticsReportPage from '@/pages/AnalyticsReportPage';
 import DonationForm from '@/components/DonationForm';
-import DonationModal from '@/components/DonationModal';
 import RaffleEntryModal from '@/components/RaffleEntryModal';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -41,7 +40,6 @@ function AppContent() {
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(60);
-  const [donorData, setDonorData] = useState(null);
 
   const openDonationForm = (amount = 60) => {
     setSelectedAmount(amount);
@@ -50,7 +48,6 @@ function AppContent() {
 
   const handleDonationSuccess = (data) => {
     setIsFormOpen(false);
-    setDonorData(data);
     const name = encodeURIComponent(data.firstName || '');
     const amount = encodeURIComponent(data.amount || '');
     navigate(`/thank-you?name=${name}&amount=${amount}`, { state: { donor: data } });
@@ -88,11 +85,6 @@ function AppContent() {
               onSuccess={handleDonationSuccess}
               initialAmount={selectedAmount}
             />
-            <DonationModal
-              isOpen={Boolean(donorData)}
-              onClose={() => setDonorData(null)}
-              donorData={donorData}
-            />
             <RaffleEntryModal />
             <Toaster />
           </div>
@@ -120,11 +112,6 @@ function AppContent() {
               onClose={() => setIsFormOpen(false)}
               onSuccess={handleDonationSuccess}
               initialAmount={selectedAmount}
-            />
-            <DonationModal
-              isOpen={Boolean(donorData)}
-              onClose={() => setDonorData(null)}
-              donorData={donorData}
             />
             <RaffleEntryModal />
             <Toaster />

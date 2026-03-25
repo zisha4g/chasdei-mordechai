@@ -104,11 +104,12 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
 
       const didDonate = !isExplicitCancel;
       if (didDonate) {
-        trackDonationCompleted(amount);
+      const actualAmount = result?.data?.amount ?? result?.amount ?? amount;
+        trackDonationCompleted(actualAmount);
         if (!hasRaffleEntryBeenLogged()) {
           trackRaffleEntry();
         }
-        onSuccess({ firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone, amount });
+        onSuccess({ firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone, amount: actualAmount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }
     });
