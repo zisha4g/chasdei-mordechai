@@ -24,7 +24,10 @@ const RafflePage = ({ onDonateClick, onDonateForRaffle }) => {
   const isTrackableVimeo = Boolean(settings.vimeoId);
 
   useEffect(() => {
+    console.log('[Raffle] useEffect fired | isTrackableVimeo:', isTrackableVimeo, '| vimeoId:', settings.vimeoId, '| videoEmbedUrl:', settings.videoEmbedUrl);
+
     if (!isTrackableVimeo) {
+      console.log('[Raffle] No vimeoId — skipping SDK, unlocking immediately.');
       setUnlocked(true);
       setProgress(1);
       return;
@@ -33,10 +36,16 @@ const RafflePage = ({ onDonateClick, onDonateForRaffle }) => {
     setUnlocked(false);
     setProgress(0);
     unlockedRef.current = false;
+    console.log('[Raffle] State reset. Waiting for Vimeo SDK + iframe...');
 
-    const doUnlock = () => {
-      if (unlockedRef.current) return;
+    const doUnlock = (reason) => {
+      console.log('[Raffle] doUnlock called | reason:', reason, '| already unlocked:', unlockedRef.current);
+      if (unlockedRef.current) {
+        console.log('[Raffle] doUnlock skipped — already fired.');
+        return;
+      }
       unlockedRef.current = true;
+      console.log('[Raffle] ✅ UNLOCKING RAFFLE via:', reason);
       trackVideoComplete('/raffle');
       setProgress(1);
       setUnlocked(true);
@@ -45,14 +54,24 @@ const RafflePage = ({ onDonateClick, onDonateForRaffle }) => {
     };
 
     const init = () => {
+      console.log('[Raffle] init() called | iframeRef.current:', iframeRef.current, '| window.Vimeo:', typeof window.Vimeo);
       // Guard: Vimeo SDK must be ready and iframe must be in the DOM
-      if (!iframeRef.current || !window.Vimeo) return;
+      if (!iframeRef.current) {
+        console.warn('[Raffle] ⚠️ init() aborted — iframeRef.current is null (iframe not mounted yet).');
+        return;
+      }
+      if (!window.Vimeo) {
+        console.warn('[Raffle] ⚠️ init() aborted — window.Vimeo is not defined (SDK not ready).');
+        return;
+      }
 
+      console.log('[Raffle] Creating Vimeo.Player from iframe src:', iframeRef.current.src);
       const player = new window.Vimeo.Player(iframeRef.current);
       playerRef.current = player;
       let hasTrackedPlay = false;
 
       player.on('play', () => {
+        console.log('[Raffle] ▶️ play event fired | restartPending:', restartPendingRef.current, '| hasTrackedPlay:', hasTrackedPlay);
         if (restartPendingRef.current) restartPendingRef.current = false;
         if (!hasTrackedPlay) {
           hasTrackedPlay = true;
@@ -61,35 +80,70 @@ const RafflePage = ({ onDonateClick, onDonateForRaffle }) => {
         }
       });
 
+      player.on('pause', () => {
+        console.log('[Raffle] ⏸️ pause event fired');
+      });
+
+      player.on('error', (err) => {
+        console.error('[Raffle] ❌ Vimeo player error:', err);
+      });
+
       // Primary progress tracking via timeupdate
       player.on('timeupdate', (data) => {
         if (typeof data?.percent === 'number') {
           const fraction = Math.min(Math.max(data.percent, 0), 1);
           setProgress(fraction);
+          // Log milestones: 25%, 50%, 75%, 90%, 97%
+          const pct = Math.round(fraction * 100);
+          if ([25, 50, 75, 90].includes(pct) && pct !== Math.round((fraction - 0.01) * 100)) {
+            console.log(`[Raffle] 📊 Progress milestone: ${pct}%`);
+          }
           // Near-end fallback unlock (handles cases where 'ended' doesn't fire)
-          if (fraction >= NEAR_END_THRESHOLD) doUnlock();
+          if (fraction >= NEAR_END_THRESHOLD) {
+            console.log('[Raffle] 📍 Near-end threshold reached (', Math.round(fraction * 100), '%) — triggering doUnlock fallback');
+            doUnlock('near-end timeupdate fallback');
+          }
         }
       });
 
       // Primary unlock: fires reliably when Vimeo considers the video finished
       player.on('ended', () => {
-        doUnlock();
+        console.log('[Raffle] 🏁 ended event fired');
+        doUnlock('ended event');
       });
+
+      // Extra diagnostics
+      player.getVideoId().then(id => console.log('[Raffle] Player reports videoId:', id)).catch(e => console.warn('[Raffle] getVideoId failed:', e));
+      player.getDuration().then(d => console.log('[Raffle] Video duration:', d, 's')).catch(e => console.warn('[Raffle] getDuration failed:', e));
     };
 
     const existingScript = document.getElementById('vimeo-player-api');
+    console.log('[Raffle] Vimeo script tag exists?', Boolean(existingScript), '| window.Vimeo ready?', Boolean(window.Vimeo));
+
     if (existingScript) {
       // Script tag exists — but SDK may still be loading
       if (window.Vimeo) {
+        console.log('[Raffle] SDK already loaded — calling init() directly.');
         init();
       } else {
-        existingScript.addEventListener('load', init, { once: true });
+        console.log('[Raffle] Script tag present but SDK not ready — attaching load listener.');
+        existingScript.addEventListener('load', () => {
+          console.log('[Raffle] Vimeo script load event fired (existing tag).');
+          init();
+        }, { once: true });
       }
     } else {
+      console.log('[Raffle] Injecting Vimeo SDK script tag...');
       const script = document.createElement('script');
       script.id = 'vimeo-player-api';
       script.src = 'https://player.vimeo.com/api/player.js';
-      script.addEventListener('load', init, { once: true });
+      script.addEventListener('load', () => {
+        console.log('[Raffle] Vimeo script loaded (fresh inject) | window.Vimeo:', typeof window.Vimeo);
+        init();
+      }, { once: true });
+      script.addEventListener('error', (e) => {
+        console.error('[Raffle] ❌ Failed to load Vimeo SDK script!', e);
+      });
       document.body.appendChild(script);
     }
   }, [isTrackableVimeo, settings.vimeoId]);

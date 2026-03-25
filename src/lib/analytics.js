@@ -17,7 +17,8 @@ import { supabase } from '@/lib/customSupabaseClient';
 export const GA4_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID || '';
 
 let ga4Initialized = false;
-const RAFFLE_ENTRY_SESSION_KEY = '_a_raffle_entry_logged';
+const RAFFLE_ENTRY_SESSION_KEY    = '_a_raffle_entry_logged';
+const DONATION_COMPLETED_SESSION_KEY = '_a_donation_completed_logged';
 
 // ── GA4 (silent background) ───────────────────────────────────────────────────
 export function initGA4() {
@@ -260,6 +261,10 @@ export function trackDonateOpen(amount) {
 }
 
 export function trackDonationCompleted(amount) {
+  try {
+    if (sessionStorage.getItem(DONATION_COMPLETED_SESSION_KEY)) return;
+    sessionStorage.setItem(DONATION_COMPLETED_SESSION_KEY, '1');
+  } catch { /* ignore */ }
   markEngagement();
   logEvent('donation_completed', window.location.pathname, Number(amount));
   ga4Event('donation_completed', { currency: 'USD', value: Number(amount) });

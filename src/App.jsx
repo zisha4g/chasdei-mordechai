@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, BrowserRouter as Router, Navigate, useLocation } from 'react-router-dom';
+import { Route, Routes, BrowserRouter as Router, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import ScrollToTop from '@/components/ScrollToTop';
 import { initGA4, trackPageView, trackReferrer, startPageTimer, stopPageTimer } from '@/lib/analytics';
 
@@ -37,11 +37,10 @@ import DonationModal from '@/components/DonationModal';
 import RaffleEntryModal from '@/components/RaffleEntryModal';
 import { Toaster } from '@/components/ui/toaster';
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(60);
-  const [donorData, setDonorData] = useState(null);
 
   const openDonationForm = (amount = 60) => {
     setSelectedAmount(amount);
@@ -50,19 +49,47 @@ function App() {
 
   const handleDonationSuccess = (data) => {
     setIsFormOpen(false);
-    setDonorData(data);
-    setIsSuccessOpen(true);
+    const name = encodeURIComponent(data.firstName || '');
+    const amount = encodeURIComponent(data.amount || '');
+    navigate(`/thank-you?name=${name}&amount=${amount}`);
   };
 
   return (
-    <Router>
+    <>
       <PageTracker />
       <ScrollToTop />
       <Routes>
         {/* Admin — standalone, no site chrome */}
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/report" element={<AnalyticsReportPage />} />
-        <Route path="/admin/thankyou" element={<ThankYouPage />} />
+        <Route path="/admin/thankyou" element={
+          <div className="flex flex-col min-h-screen bg-[#0b123a]">
+            <Header onDonateClick={openDonationForm} />
+            <main className="flex-grow" style={{ paddingTop: '4px' }}>
+              <ThankYouPage />
+            </main>
+            <Footer onDonateClick={openDonationForm} />
+          </div>
+        } />
+
+        {/* Thank-you — dedicated route with explicit site chrome */}
+        <Route path="/thank-you" element={
+          <div className="flex flex-col min-h-screen bg-[#0b123a]">
+            <Header onDonateClick={openDonationForm} />
+            <main className="flex-grow" style={{ paddingTop: '4px' }}>
+              <ThankYouPage />
+            </main>
+            <Footer onDonateClick={openDonationForm} />
+            <DonationForm
+              isOpen={isFormOpen}
+              onClose={() => setIsFormOpen(false)}
+              onSuccess={handleDonationSuccess}
+              initialAmount={selectedAmount}
+            />
+            <RaffleEntryModal />
+            <Toaster />
+          </div>
+        } />
 
         {/* Public site */}
         <Route path="*" element={
@@ -75,7 +102,6 @@ function App() {
                 <Route path="/about-us" element={<AboutPage onDonateClick={openDonationForm} />} />
                 <Route path="/raffle" element={<RafflePage onDonateClick={openDonationForm} />} />
                 <Route path="/contact" element={<ContactPage />} />
-                <Route path="/thank-you" element={<ThankYouPage />} />
                 <Route path="/about" element={<Navigate to="/about-us" replace />} />
                 <Route path="/gallery" element={<Navigate to="/" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -88,16 +114,19 @@ function App() {
               onSuccess={handleDonationSuccess}
               initialAmount={selectedAmount}
             />
-            <DonationModal
-              isOpen={isSuccessOpen}
-              onClose={() => setIsSuccessOpen(false)}
-              donorData={donorData}
-            />
             <RaffleEntryModal />
             <Toaster />
           </div>
         } />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
