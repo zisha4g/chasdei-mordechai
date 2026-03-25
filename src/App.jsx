@@ -26,6 +26,7 @@ import RafflePage from '@/pages/RafflePage';
 import ContactPage from '@/pages/ContactPage';
 import ThankYouPage from '@/pages/ThankYouPage';
 import AdminPage from '@/pages/AdminPage';
+import AnalyticsReportPage from '@/pages/AnalyticsReportPage';
 import DonationForm from '@/components/DonationForm';
 import DonationModal from '@/components/DonationModal';
 import RaffleEntryModal from '@/components/RaffleEntryModal';
@@ -55,6 +56,7 @@ function App() {
       <Routes>
         {/* Admin — standalone, no site chrome */}
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/report" element={<AnalyticsReportPage />} />
 
         {/* Public site */}
         <Route path="*" element={

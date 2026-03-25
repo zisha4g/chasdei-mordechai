@@ -6,16 +6,10 @@ import { useNavigate } from 'react-router-dom';
 const AboutPage = () => {
   const navigate = useNavigate();
 
-  const values = [
-    { icon: '🤝', title: 'Family First', desc: "Every person we help is someone's family member. We treat them with the dignity they deserve — quietly, respectfully, completely." },
-    { icon: '🕯️', title: 'Kavod Shabbos', desc: "We believe every Jewish family deserves to enter Shabbos with joy and dignity — not anxiety about what's in the fridge." },
-    { icon: '❤️', title: 'Real Relief', desc: "We don't just feel the pain. We relieve it — with tangible, immediate help that makes a real difference right now." },
-  ];
-
   const realityPoints = [
-    { bold: 'Many families are quietly fighting the pain of infertility', rest: ' — carrying heartbreak in silence.' },
-    { bold: 'Others are reeling from life-altering medical diagnoses', rest: ' — with bills piling up and hope running thin.' },
-    { bold: 'Far too many are struggling just to make ends meet', rest: ' — hiding it behind a pressed suit and a smile.' },
+    { text: 'Many families are quietly fighting the pain of infertility.' },
+    { text: 'Others are reeling from life-altering medical diagnoses.' },
+    { text: 'And far too many are struggling just to make ends meet.' },
   ];
 
   return (
@@ -43,16 +37,7 @@ const AboutPage = () => {
             <strong style={{ color: '#fff' }}>Chasdei Mordechai isn't just an organization.</strong><br />
             It's a lifeline for your cousin, your neighbor, your friend.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              onClick={() => navigate('/raffle')}
-              style={{ display: 'inline-block', background: '#F2DFA8', color: '#0B1A4F', fontSize: '0.95rem', fontWeight: 900, letterSpacing: '1.5px', textTransform: 'uppercase', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,0,0,0.3)', transition: 'all 0.22s ease', whiteSpace: 'nowrap', fontFamily: "'Inter',sans-serif" }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#E5CA7A'; e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#F2DFA8'; e.currentTarget.style.transform = ''; }}
-            >
-              Donate Now
-            </button>
-          </div>
+
         </div>
       </section>
 
@@ -66,18 +51,8 @@ const AboutPage = () => {
               WE DON'T SEE <span style={{ color: '#F2DFA8' }}>&quot;CASES.&quot;</span><br />WE SEE PEOPLE.
             </h2>
             <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.85, fontFamily: "'Inter',sans-serif" }}>
-              We see the people sitting next to us in shul. The struggle is closer than we like to think.
+              We see the people sitting next to us in shul.
             </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.5rem' }}>
-            {values.map(v => (
-              <div key={v.title} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '2rem 1.75rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTop: '3px solid rgba(200,20,30,0.45)', boxShadow: '0 -4px 20px rgba(200,20,30,0.15), 0 8px 32px rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{v.icon}</div>
-                <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: '1.4rem', color: '#FFFFFF', letterSpacing: '0.5px', marginBottom: '0.6rem', fontWeight: 700 }}>{v.title}</div>
-                <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.7, margin: 0, fontFamily: "'Inter',sans-serif" }}>{v.desc}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -92,14 +67,14 @@ const AboutPage = () => {
               <h2 style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 'clamp(2.5rem,5vw,4.2rem)', color: '#FFFFFF', lineHeight: 1, letterSpacing: '1px', fontWeight: 700, margin: '0 0 1.5rem 0' }}>
                 THE STRUGGLE IS <span style={{ color: '#F2DFA8' }}>CLOSER</span> THAN WE THINK.
               </h2>
-              <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.85, marginBottom: '1.5rem', fontFamily: "'Inter',sans-serif" }}>
-                Within our own circles, the pain is real and often invisible. It doesn't always look the way we expect.
+              <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.85, marginBottom: '1.25rem', fontFamily: "'Inter',sans-serif" }}>
+                Within our circles:
               </p>
               {realityPoints.map((pt, i) => (
-                <div key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                <div key={i} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(200,20,30,0.5)', boxShadow: '0 0 8px rgba(200,20,30,0.35)', marginTop: '0.5rem', flexShrink: 0 }}></div>
                   <p style={{ margin: 0, fontSize: '1.05rem', color: 'rgba(255,255,255,0.62)', lineHeight: 1.8, fontFamily: "'Inter',sans-serif" }}>
-                    <strong style={{ color: '#fff' }}>{pt.bold}</strong>{pt.rest}
+                    {pt.text}
                   </p>
                 </div>
               ))}
@@ -139,11 +114,11 @@ const AboutPage = () => {
             </p>
             <button
               onClick={() => navigate('/raffle')}
-              style={{ display: 'inline-block', background: '#5d2759', color: '#F2DFA8', fontSize: '0.88rem', fontWeight: 700, letterSpacing: '1px', padding: '1rem 2rem', borderRadius: '100px', border: '1.5px solid #F2DFA8', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: "'Inter',sans-serif", textTransform: 'uppercase' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#7a335d'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#5d2759'; e.currentTarget.style.transform = ''; }}
+              style={{ display: 'inline-block', background: 'rgba(242,223,168,0.09)', color: '#F2DFA8', fontSize: '0.88rem', fontWeight: 700, letterSpacing: '1.5px', padding: '1rem 2.2rem', borderRadius: '100px', border: '1.5px solid rgba(242,223,168,0.5)', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: "'Inter',sans-serif", textTransform: 'uppercase' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(242,223,168,0.18)'; e.currentTarget.style.borderColor = '#F2DFA8'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(242,223,168,0.09)'; e.currentTarget.style.borderColor = 'rgba(242,223,168,0.5)'; e.currentTarget.style.transform = ''; }}
             >
-              See the Impact ↓
+              See the Impact →
             </button>
           </div>
         </div>
