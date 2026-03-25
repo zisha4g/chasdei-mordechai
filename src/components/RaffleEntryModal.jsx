@@ -17,7 +17,7 @@ const buildFullAddress = ({ addressLine1, city, state, postalCode }) => {
 };
 
 const RaffleEntryModal = () => {
-  const { isOpen, closeRaffle } = useRaffle();
+  const { isOpen, closeRaffle, prefillData } = useRaffle();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,6 +30,21 @@ const RaffleEntryModal = () => {
     state: '',
     postalCode: '',
   });
+
+  // Pre-fill form whenever the modal opens with donor data
+  const prevOpenRef = React.useRef(false);
+  React.useEffect(() => {
+    if (isOpen && !prevOpenRef.current && prefillData) {
+      setFormData(prev => ({
+        ...prev,
+        firstName:   prefillData.firstName || prev.firstName,
+        lastName:    prefillData.lastName  || prev.lastName,
+        email:       prefillData.email     || prev.email,
+        phone:       prefillData.phone     || prev.phone,
+      }));
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen, prefillData]);
 
   if (!isOpen) return null;
 

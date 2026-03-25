@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation } from 'react-router-dom';
 import { trackDonationCompleted } from '@/lib/analytics';
+import { useRaffle } from '@/contexts/RaffleContext';
 
 // ── Confetti (matches designer HTML exactly) ──────────────────────────────────
 function Confetti() {
@@ -55,6 +56,9 @@ const ThankYouPage = () => {
   useEffect(() => {
     if (amount) trackDonationCompleted(amount);
   }, [amount]);
+
+  const { openRaffle } = useRaffle();
+  const donor = location.state?.donor || null;
 
   const [nlDone,    setNlDone]    = useState(false);
   const [copyLabel, setCopyLabel] = useState('🔗 Copy Link');
@@ -139,9 +143,29 @@ const ThankYouPage = () => {
             </span>
           </div>
 
-          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)' }}>
+          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', marginBottom: '2.5rem' }}>
             A confirmation email is on its way to you.
           </p>
+
+          {/* Raffle CTA — always visible in hero, no scroll needed */}
+          <div style={{ animation: 'tyFadeUp 0.7s ease 0.5s both' }}>
+            <button
+              onClick={() => openRaffle(donor)}
+              style={{
+                background: '#E8CC74', color: '#091031',
+                fontSize: '1rem', fontWeight: 900, letterSpacing: '1.5px', textTransform: 'uppercase',
+                padding: '1rem 2.5rem', borderRadius: 100, border: 'none', cursor: 'pointer',
+                boxShadow: '0 8px 32px rgba(232,204,116,0.35)', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F1D989'; e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#E8CC74'; e.currentTarget.style.transform = ''; }}
+            >
+              🎟️ Enter Raffle Now
+            </button>
+            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.78rem', marginTop: '0.6rem' }}>
+              Win $1,000 — free for every donor
+            </p>
+          </div>
         </div>
       </div>
 
@@ -165,6 +189,40 @@ const ThankYouPage = () => {
           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', lineHeight: 1.85, marginBottom: 0 }}>
             <strong style={{ color: '#fff' }}>But today, you gave it back to him.</strong>
           </p>
+        </div>
+      </div>
+
+      {/* ── RAFFLE ENTRY ── */}
+      <div style={{ padding: '0 6% 3rem', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          maxWidth: 680, margin: '0 auto',
+          background: 'linear-gradient(135deg, rgba(232,204,116,0.12) 0%, rgba(232,204,116,0.05) 100%)',
+          border: '1.5px solid rgba(232,204,116,0.35)',
+          borderRadius: 26, padding: '2rem 2.5rem',
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1.5rem',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h4 style={{ fontFamily: "'Bebas Neue', cursive", fontSize: '1.6rem', color: '#F2DFA8', letterSpacing: 1, margin: '0 0 0.4rem', textTransform: 'uppercase' }}>
+              Don't forget your raffle entry!
+            </h4>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.95rem', margin: 0 }}>
+              As a thank you, you're eligible to win <strong style={{ color: '#fff' }}>$1,000</strong>. Enter for free below.
+            </p>
+          </div>
+          <button
+            onClick={() => openRaffle(donor)}
+            style={{
+              background: '#E8CC74', color: '#091031', fontSize: '0.92rem', fontWeight: 800,
+              letterSpacing: '1px', textTransform: 'uppercase', padding: '0.9rem 2rem',
+              borderRadius: 100, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.25)', transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F1D989'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#E8CC74'; }}
+          >
+            🎟️ Enter Raffle Now
+          </button>
         </div>
       </div>
 

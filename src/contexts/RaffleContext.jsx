@@ -13,12 +13,13 @@ export const useRaffle = () => {
 
 export const RaffleProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [prefillData, setPrefillData] = useState(null);
 
-  const openRaffle = () => setIsOpen(true);
-  const closeRaffle = () => setIsOpen(false);
+  const openRaffle = (data = null) => { setPrefillData(data); setIsOpen(true); };
+  const closeRaffle = () => { setIsOpen(false); setPrefillData(null); };
 
   return (
-    <RaffleContext.Provider value={{ isOpen, openRaffle, closeRaffle }}>
+    <RaffleContext.Provider value={{ isOpen, openRaffle, closeRaffle, prefillData }}>
       {children}
     </RaffleContext.Provider>
   );

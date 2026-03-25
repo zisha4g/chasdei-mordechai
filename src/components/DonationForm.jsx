@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Heart, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -25,6 +25,16 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   useEffect(() => {
     if (isOpen) refresh();
   }, [isOpen, refresh]);
+
+  // Log every postMessage from DonorFuse so we can see what it sends
+  useEffect(() => {
+    const handleMessage = (event) => {
+      console.log('[DonorFuse postMessage] origin:', event.origin, '| data:', event.data, '| type:', typeof event.data);
+      try { console.log('[DonorFuse postMessage] JSON:', JSON.stringify(event.data)); } catch (_) {}
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const amounts = [
     { value: 12, label: "One Child's Shabbos" },
@@ -67,14 +77,38 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
 
     window.DonorFuseClient.ShowPopup(options, (result) => {
       setIsSubmitting(false);
-      // DonorFuse passes true (boolean) on successful payment, and false/object/undefined on cancel
-      const didDonate = result === true || result?.success === true || result?.donated === true;
+
+      // ── Full diagnostic log — check browser console after donating ──
+      console.log('[DonorFuse] ✅ Callback fired!');
+      console.log('[DonorFuse] Raw result:', result);
+      console.log('[DonorFuse] typeof result:', typeof result);
+      try { console.log('[DonorFuse] JSON.stringify:', JSON.stringify(result)); } catch (_) {}
+      if (result && typeof result === 'object') {
+        console.log('[DonorFuse] Object keys:', Object.keys(result));
+        console.log('[DonorFuse] Object entries:', Object.entries(result));
+      }
+
+      // Treat any result as success UNLESS it's an explicit cancellation/close
+      const isExplicitCancel =
+        result === false ||
+        result === null ||
+        result === undefined ||
+        result?.cancelled === true ||
+        result?.canceled  === true ||
+        result?.status    === 'cancelled' ||
+        result?.status    === 'canceled'  ||
+        result?.status    === 'closed'    ||
+        result?.closed    === true;
+
+      console.log('[DonorFuse] isExplicitCancel:', isExplicitCancel, '| treating as success:', !isExplicitCancel);
+
+      const didDonate = !isExplicitCancel;
       if (didDonate) {
         trackDonationCompleted(amount);
         if (!hasRaffleEntryBeenLogged()) {
           trackRaffleEntry();
         }
-        onSuccess({ firstName: formData.firstName, amount });
+        onSuccess({ firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone, amount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       }
     });
