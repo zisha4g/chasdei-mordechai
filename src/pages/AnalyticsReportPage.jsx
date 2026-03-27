@@ -63,6 +63,7 @@ function AnalyticsContent({ onBack }) {
   const [expandedSession,  setExpandedSession]  = useState(null);
   const [activeVisitors,   setActiveVisitors]   = useState(null);
   const [hoveredDevice,    setHoveredDevice]    = useState(null);
+  const [selectedSource,   setSelectedSource]   = useState(null);
 
   // Poll active visitors (distinct session_ids with an event in the last 5 min) every 30s
   useEffect(() => {
@@ -92,18 +93,38 @@ function AnalyticsContent({ onBack }) {
   const load = useCallback(async () => {
     setLoading(true);
     setTableError(false);
-    const { data, error: err } = await supabase
-      .from('analytics_events')
-      .select('*')
-      .gte('created_at', dateFrom + 'T00:00:00.000Z')
-      .lte('created_at', dateTo   + 'T23:59:59.999Z')
-      .order('created_at', { ascending: true });
+    const pageSize = 1000;
+    const rows = [];
+    let offset = 0;
+    let err = null;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('analytics_events')
+        .select('*')
+        .gte('created_at', dateFrom + 'T00:00:00.000Z')
+        .lte('created_at', dateTo   + 'T23:59:59.999Z')
+        .order('created_at', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        err = error;
+        break;
+      }
+
+      const batch = data || [];
+      rows.push(...batch);
+
+      if (batch.length < pageSize) break;
+      offset += pageSize;
+    }
+
     setLoading(false);
     if (err) {
       if (err.code === '42P01' || String(err.message).includes('does not exist')) setTableError(true);
       return;
     }
-    setEvents(data || []);
+    setEvents(rows);
   }, [dateFrom, dateTo]);
 
   useEffect(() => { load(); }, [load]);
@@ -165,6 +186,23 @@ function AnalyticsContent({ onBack }) {
   });
   const campaignEntries = Object.entries(campaignCounts).sort(([, a], [, b]) => b - a);
 
+  const sourceDetailRows = selectedSource
+    ? Object.values(referrerBySession)
+        .filter(e => (e.utm_source || e.referrer_source || 'direct') === selectedSource.key)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 8)
+    : [];
+
+  const sourceDetailCampaigns = selectedSource
+    ? Object.values(referrerBySession)
+        .filter(e => (e.utm_source || e.referrer_source || 'direct') === selectedSource.key && e.utm_campaign)
+        .reduce((acc, e) => {
+          const label = `${e.utm_campaign}${e.utm_medium ? ` (${e.utm_medium})` : ''}`;
+          acc[label] = (acc[label] || 0) + 1;
+          return acc;
+        }, {})
+    : {};
+
   const sessionMap = {};
   events.forEach(e => {
     if (!e.session_id) return;
@@ -181,12 +219,13 @@ function AnalyticsContent({ onBack }) {
     }
     sessionMap[e.session_id].events.push(e);
   });
-  const sessions = Object.values(sessionMap)
-    .sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at))
-    .slice(0, 100);
+  const allSessions = Object.values(sessionMap)
+    .sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at));
 
-  const uniqueVisitors       = sessions.length;
-  const uniqueSessionsForEvent = (name) => sessions.filter(s => s.events.some(e => e.event === name)).length;
+  const visibleSessions = allSessions.slice(0, 100);
+
+  const uniqueVisitors       = allSessions.length;
+  const uniqueSessionsForEvent = (name) => allSessions.filter(s => s.events.some(e => e.event === name)).length;
   const uniqueVideoViewers   = uniqueSessionsForEvent('video_play');
   const uniqueDonateClickers = uniqueSessionsForEvent('donate_click');
   const uniqueDonors         = uniqueSessionsForEvent('donation_completed');
@@ -194,7 +233,7 @@ function AnalyticsContent({ onBack }) {
 
   // ── Device breakdown ─────────────────────────────────────────────────────────
   const deviceCounts = { desktop: 0, mobile: 0, tablet: 0 };
-  sessions.forEach(s => { deviceCounts[s.device_type] = (deviceCounts[s.device_type] || 0) + 1; });
+  allSessions.forEach(s => { deviceCounts[s.device_type] = (deviceCounts[s.device_type] || 0) + 1; });
   const deviceTotal = uniqueVisitors || 1;
   const deviceItems = [
     { key: 'desktop', label: 'PC / Desktop', Icon: Monitor,    color: 'bg-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
@@ -461,14 +500,19 @@ function AnalyticsContent({ onBack }) {
                       const meta = sourceMeta(key);
                       const pct  = Math.round((count / sourceTotal) * 100);
                       return (
-                        <div key={key} className="flex items-center gap-3">
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSelectedSource({ key, count, pct, meta })}
+                          className="w-full flex items-center gap-3 rounded-lg px-1 py-1 text-left hover:bg-gray-50 transition"
+                        >
                           <span className={`text-xs font-semibold w-20 truncate shrink-0 ${meta.text}`}>{meta.label}</span>
                           <div className="flex-1 h-5 bg-gray-100 rounded overflow-hidden">
                             <div className={`h-full ${meta.color} rounded transition-all`} style={{ width: `${pct}%` }} />
                           </div>
                           <span className="text-xs font-bold text-gray-700 w-7 text-right shrink-0">{count}</span>
                           <span className="text-xs text-gray-400 w-8 text-right shrink-0">{pct}%</span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -506,10 +550,10 @@ function AnalyticsContent({ onBack }) {
                 <h2 className="text-sm font-bold text-gray-800">Visitor Logs</h2>
                 <p className="text-xs text-gray-400">Click a row to expand journey</p>
               </div>
-              <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full shrink-0">{sessions.length} sessions</span>
+              <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full shrink-0">{allSessions.length} sessions</span>
             </div>
 
-            {sessions.length === 0 ? (
+            {allSessions.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-gray-400">
                 {events.length === 0
                   ? 'No visitor data in this date range.'
@@ -527,7 +571,7 @@ function AnalyticsContent({ onBack }) {
                 </div>
 
                 <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-                  {sessions.map((s) => {
+                  {visibleSessions.map((s) => {
                     const first    = s.events[0];
                     const last     = s.events[s.events.length - 1];
                     const duration = new Date(last.created_at) - new Date(first.created_at);
@@ -588,6 +632,111 @@ function AnalyticsContent({ onBack }) {
             <div className="text-center py-10 text-gray-400">
               <p className="text-3xl mb-3">📊</p>
               <p className="text-sm">No events in this date range yet.</p>
+            </div>
+          )}
+
+          {selectedSource && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-sm">
+              <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-200">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Traffic Source Detail</p>
+                    <h3 className={`mt-1 text-3xl font-extrabold ${selectedSource.meta.text}`}>{selectedSource.meta.label}</h3>
+                    <p className="mt-1 text-sm text-gray-500">Click outside the panel or the close button to dismiss.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSource(null)}
+                    className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="grid gap-4 p-6 lg:grid-cols-[1.2fr_1fr] overflow-y-auto max-h-[calc(90vh-88px)]">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-2xl bg-gray-50 p-5 border border-gray-100">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Visitors</p>
+                        <p className="mt-2 text-4xl font-extrabold text-gray-900">{selectedSource.count}</p>
+                        <p className="mt-1 text-sm text-gray-500">{selectedSource.pct}% of all traffic in this date range</p>
+                      </div>
+                      <div className="rounded-2xl bg-gray-50 p-5 border border-gray-100">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">How it was captured</p>
+                        <p className="mt-2 text-lg font-bold text-gray-900">{selectedSource.key === 'direct' ? 'No referrer or UTM tag' : 'UTM source or browser referrer'}</p>
+                        <p className="mt-1 text-sm text-gray-500">Use tagged links to make this source easy to verify.</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <h4 className="text-sm font-bold text-gray-800">What this means</h4>
+                      <p className="mt-2 text-sm leading-6 text-gray-600">
+                        This row groups sessions by <span className="font-semibold text-gray-900">utm_source</span> first, then by the browser referrer.
+                        If you use a campaign link like <span className="font-mono text-gray-900">?utm_source=facebook</span>, it should appear here as <span className="font-semibold text-gray-900">facebook</span>.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <h4 className="text-sm font-bold text-gray-800 mb-3">Example visits</h4>
+                      {sourceDetailRows.length === 0 ? (
+                        <p className="text-sm text-gray-400">No example rows available for this source.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {sourceDetailRows.map((row) => (
+                            <div key={`${row.session_id}-${row.created_at}`} className="rounded-xl bg-gray-50 p-4 border border-gray-100">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                <span className="font-semibold text-gray-700">{fmtRelative(row.created_at)}</span>
+                                <span>•</span>
+                                <span>{row.page || '/'}</span>
+                                {row.utm_campaign && <><span>•</span><span>campaign: {row.utm_campaign}{row.utm_medium ? ` (${row.utm_medium})` : ''}</span></>}
+                              </div>
+                              <div className="mt-2 grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                                <div><span className="font-semibold text-gray-800">utm_source:</span> {row.utm_source || '—'}</div>
+                                <div><span className="font-semibold text-gray-800">referrer_source:</span> {row.referrer_source || '—'}</div>
+                                <div className="sm:col-span-2"><span className="font-semibold text-gray-800">raw referrer:</span> {row.raw_referrer || '—'}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                      <h4 className="text-sm font-bold text-gray-800">Campaign breakdown</h4>
+                      <p className="mt-1 text-sm text-gray-500">Only campaigns tied to this source are shown here.</p>
+                      <div className="mt-4 space-y-3">
+                        {Object.keys(sourceDetailCampaigns).length === 0 ? (
+                          <p className="text-sm text-gray-400">No campaign tags were found for this source.</p>
+                        ) : (
+                          Object.entries(sourceDetailCampaigns)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([label, count]) => (
+                              <div key={label} className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-gray-700 w-36 truncate shrink-0">{label}</span>
+                                <div className="flex-1 h-4 rounded-full bg-white overflow-hidden border border-gray-200">
+                                  <div className="h-full rounded-full bg-emerald-400" style={{ width: `${Math.max(6, Math.round((count / Math.max(1, selectedSource.count)) * 100))}%` }} />
+                                </div>
+                                <span className="text-sm font-bold text-gray-800 w-8 text-right shrink-0">{count}</span>
+                              </div>
+                            ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                      <h4 className="text-sm font-bold text-gray-800">How to make this clearer</h4>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-gray-600">
+                        <li>Use one clean source name per platform, like <span className="font-mono">facebook</span> or <span className="font-mono">google</span>.</li>
+                        <li>Add <span className="font-mono">utm_medium</span> for the channel, like <span className="font-mono">social</span> or <span className="font-mono">cpc</span>.</li>
+                        <li>Add <span className="font-mono">utm_campaign</span> for the fundraiser name.</li>
+                        <li>Add <span className="font-mono">utm_content</span> if you want to compare different ad creatives.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

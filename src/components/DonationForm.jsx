@@ -37,6 +37,36 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const isSuccessfulDonationResult = (result) => {
+    if (!result || result === false) return false;
+
+    const isExplicitCancel =
+      result === null ||
+      result === undefined ||
+      result?.cancelled === true ||
+      result?.canceled === true ||
+      result?.status === 'cancelled' ||
+      result?.status === 'canceled' ||
+      result?.status === 'closed' ||
+      result?.closed === true;
+
+    if (isExplicitCancel) return false;
+
+    return (
+      result?.success === true ||
+      result?.status === 'success' ||
+      result?.status === 'completed' ||
+      result?.status === 'paid' ||
+      result?.paid === true ||
+      result?.completed === true ||
+      result?.data?.success === true ||
+      result?.data?.status === 'success' ||
+      result?.data?.status === 'completed' ||
+      result?.data?.status === 'paid' ||
+      result?.data?.paid === true
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.firstName || !formData.email) {
@@ -69,21 +99,8 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
     window.DonorFuseClient.ShowPopup(options, (result) => {
       setIsSubmitting(false);
 
-      // Treat any result as success UNLESS it's an explicit cancellation/close
-      const isExplicitCancel =
-        result === false ||
-        result === null ||
-        result === undefined ||
-        result?.cancelled === true ||
-        result?.canceled  === true ||
-        result?.status    === 'cancelled' ||
-        result?.status    === 'canceled'  ||
-        result?.status    === 'closed'    ||
-        result?.closed    === true;
-
-      const didDonate = !isExplicitCancel;
-      if (didDonate) {
-      const actualAmount = result?.data?.amount ?? result?.amount ?? amount;
+      if (isSuccessfulDonationResult(result)) {
+        const actualAmount = result?.data?.amount ?? result?.amount ?? amount;
         trackDonationCompleted(actualAmount);
         if (!hasRaffleEntryBeenLogged()) {
           trackRaffleEntry();

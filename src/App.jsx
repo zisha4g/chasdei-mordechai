@@ -65,7 +65,7 @@ function AppContent() {
           <div className="flex flex-col min-h-screen bg-[#0b123a]">
             <Header onDonateClick={openDonationForm} />
             <main className="flex-grow" style={{ paddingTop: '4px' }}>
-              <ThankYouPage />
+              <ThankYouPage requireDonation={false} />
             </main>
             <Footer onDonateClick={openDonationForm} />
           </div>

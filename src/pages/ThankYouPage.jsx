@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
-import { Link, useLocation } from 'react-router-dom';
-import { trackDonationCompleted } from '@/lib/analytics';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRaffle } from '@/contexts/RaffleContext';
 
 // ── Confetti (matches designer HTML exactly) ──────────────────────────────────
@@ -45,20 +44,29 @@ function Confetti() {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-const ThankYouPage = () => {
+const ThankYouPage = ({ requireDonation = true }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const params   = new URLSearchParams(location.search);
   const rawName  = params.get('name') || '';
   const safeName = /^[a-zA-Z\s'-]{1,50}$/.test(rawName) ? rawName : 'FRIEND';
   const rawAmt   = parseFloat(params.get('amount'));
   const amount   = rawAmt > 0 && rawAmt < 100000 ? rawAmt : null;
 
-  useEffect(() => {
-    if (amount) trackDonationCompleted(amount);
-  }, [amount]);
-
   const { openRaffle } = useRaffle();
   const donor = location.state?.donor || null;
+
+  useEffect(() => {
+    if (!requireDonation) return;
+    const hasDonationContext = Boolean(donor) || Boolean(amount);
+    if (!hasDonationContext) {
+      navigate('/donate', { replace: true });
+    }
+  }, [requireDonation, donor, amount, navigate]);
+
+  if (requireDonation && !donor && !amount) {
+    return null;
+  }
 
   const [nlDone,    setNlDone]    = useState(false);
   const [copyLabel, setCopyLabel] = useState('🔗 Copy Link');
