@@ -58,13 +58,15 @@ const ThankYouPage = ({ requireDonation = true }) => {
 
   useEffect(() => {
     if (!requireDonation) return;
-    const hasDonationContext = Boolean(donor) || Boolean(amount);
-    if (!hasDonationContext) {
+    // Require the router state object set by handleDonationSuccess —
+    // the URL params alone are not sufficient because they persist in
+    // browser history and would let a back-button press re-show this page.
+    if (!donor) {
       navigate('/donate', { replace: true });
     }
-  }, [requireDonation, donor, amount, navigate]);
+  }, [requireDonation, donor, navigate]);
 
-  if (requireDonation && !donor && !amount) {
+  if (requireDonation && !donor) {
     return null;
   }
 

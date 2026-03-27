@@ -58,21 +58,26 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       return { isSuccess: false, reason: 'explicit-cancel', result };
     }
 
-    const paymentProof =
-      result?.transactionId ||
-      result?.transaction_id ||
-      result?.paymentId ||
-      result?.payment_id ||
-      result?.confirmationId ||
-      result?.confirmation_id ||
-      result?.data?.transactionId ||
-      result?.data?.transaction_id ||
-      result?.data?.paymentId ||
-      result?.data?.payment_id ||
-      result?.data?.confirmationId ||
-      result?.data?.confirmation_id;
+    // paymentProof must be a non-empty string — a truthy-but-empty or numeric ID is not acceptable
+    const proofCandidates = [
+      result?.transactionId,
+      result?.transaction_id,
+      result?.paymentId,
+      result?.payment_id,
+      result?.confirmationId,
+      result?.confirmation_id,
+      result?.data?.transactionId,
+      result?.data?.transaction_id,
+      result?.data?.paymentId,
+      result?.data?.payment_id,
+      result?.data?.confirmationId,
+      result?.data?.confirmation_id,
+    ];
+    const paymentProof = proofCandidates.find(v => typeof v === 'string' && v.trim().length > 0) || null;
 
-    const reportedAmount = result?.data?.amount ?? result?.amount;
+    // reportedAmount must be a positive finite number
+    const rawAmount = result?.data?.amount ?? result?.amount;
+    const reportedAmount = Number(rawAmount);
     const hasSuccessStatus =
       result?.success === true ||
       result?.status === 'success' ||
@@ -87,7 +92,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       return { isSuccess: false, reason: 'missing-payment-proof', reportedAmount, result };
     }
 
-    if (reportedAmount == null || reportedAmount === '') {
+    if (!Number.isFinite(reportedAmount) || reportedAmount <= 0) {
       return { isSuccess: false, reason: 'missing-amount', paymentProof, result };
     }
 
@@ -133,17 +138,64 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       phone: phone || null,
     });
 
+    // Guard 1: browser back button — if a popstate fires while the popup is
+    // open it means the user pressed back to dismiss it, not to confirm a payment.
+    let browserBackPressed = false;
+    const onPopState = () => { browserBackPressed = true; };
+    window.addEventListener('popstate', onPopState);
+
+    // Guard 2: postMessage cancel signal from DonorFuse iframe
+    let messageCancel = false;
+    const onMessage = (event) => {
+      const d = event.data;
+      if (!d || typeof d !== 'object') return;
+      const isCancelMsg =
+        d.success === false ||
+        d.cancelled === true ||
+        d.canceled  === true ||
+        d.closed    === true ||
+        d.status === 'cancelled' ||
+        d.status === 'canceled'  ||
+        d.status === 'closed'    ||
+        d.status === 'back'      ||
+        d.action === 'close'     ||
+        d.action === 'cancel'    ||
+        d.type   === 'close'     ||
+        d.type   === 'cancel';
+      if (isCancelMsg) messageCancel = true;
+    };
+    window.addEventListener('message', onMessage);
+
     window.DonorFuseClient.ShowPopup(options, (result) => {
+      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('message', onMessage);
       setIsSubmitting(false);
 
       const decision = getDonationDecision(result);
+
+      // If a cancel signal was received and there is no payment proof,
+      // override the decision even if the result looked like success
+      const resolvedDecision =
+        (browserBackPressed || messageCancel) && !decision.isSuccess
+          ? { isSuccess: false, reason: browserBackPressed ? 'browser-back' : 'message-cancel', result }
+          : decision;
+
+      // If both a cancel signal AND an apparent success arrived at the same
+      // time (back pressed right after confirmation), trust the payment proof
+      const finalDecision = (browserBackPressed || messageCancel) && decision.isSuccess
+        ? decision   // real transaction ID + amount present → still a real donation
+        : resolvedDecision;
+
       console.log(donationDebugLabel, 'popup callback', {
         decision,
+        finalDecision,
+        browserBackPressed,
+        messageCancel,
         result,
       });
 
-      if (decision.isSuccess) {
-        const actualAmount = decision.reportedAmount;
+      if (finalDecision.isSuccess) {
+        const actualAmount = finalDecision.reportedAmount;
         trackDonationCompleted(actualAmount);
         if (!hasRaffleEntryBeenLogged()) {
           trackRaffleEntry();
@@ -152,7 +204,7 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
       } else {
         console.log(donationDebugLabel, 'popup rejected', {
-          reason: decision.reason,
+          reason: finalDecision.reason,
           amount,
           result,
         });

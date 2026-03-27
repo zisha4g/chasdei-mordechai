@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, Calendar, ChevronDown, ChevronRight, Monitor, Smartphone, Tablet, ArrowLeft, Globe, Share2 } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -64,19 +64,28 @@ function AnalyticsContent({ onBack }) {
   const [activeVisitors,   setActiveVisitors]   = useState(null);
   const [hoveredDevice,    setHoveredDevice]    = useState(null);
   const [selectedSource,   setSelectedSource]   = useState(null);
+  const [loadingMore,      setLoadingMore]      = useState(false);
+  const loadGenRef = useRef(0);
 
   // Poll active visitors (distinct session_ids with an event in the last 5 min) every 30s
   useEffect(() => {
     const fetchActive = async () => {
       const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { data } = await supabase
-        .from('analytics_events')
-        .select('session_id')
-        .gte('created_at', since);
-      if (data) {
-        const unique = new Set(data.map(r => r.session_id).filter(Boolean));
-        setActiveVisitors(unique.size);
+      const pageSize = 1000;
+      const sessionIds = new Set();
+      let offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from('analytics_events')
+          .select('session_id')
+          .gte('created_at', since)
+          .range(offset, offset + pageSize - 1);
+        if (!data || data.length === 0) break;
+        data.forEach(r => r.session_id && sessionIds.add(r.session_id));
+        if (data.length < pageSize) break;
+        offset += pageSize;
       }
+      setActiveVisitors(sessionIds.size);
     };
     fetchActive();
     const interval = setInterval(fetchActive, 30000);
@@ -91,8 +100,11 @@ function AnalyticsContent({ onBack }) {
   };
 
   const load = useCallback(async () => {
+    const gen = ++loadGenRef.current;
     setLoading(true);
+    setLoadingMore(false);
     setTableError(false);
+    setEvents([]);
     const pageSize = 1000;
     const rows = [];
     let offset = 0;
@@ -107,24 +119,31 @@ function AnalyticsContent({ onBack }) {
         .order('created_at', { ascending: true })
         .range(offset, offset + pageSize - 1);
 
-      if (error) {
-        err = error;
-        break;
-      }
+      if (loadGenRef.current !== gen) return; // superseded by a newer load
+      if (error) { err = error; break; }
 
       const batch = data || [];
       rows.push(...batch);
+
+      // Show first page immediately so the UI is never blank
+      if (offset === 0) {
+        setLoading(false);
+        setEvents([...rows]);
+        if (batch.length >= pageSize) setLoadingMore(true);
+      } else {
+        setEvents([...rows]);
+      }
 
       if (batch.length < pageSize) break;
       offset += pageSize;
     }
 
+    if (loadGenRef.current !== gen) return;
     setLoading(false);
+    setLoadingMore(false);
     if (err) {
       if (err.code === '42P01' || String(err.message).includes('does not exist')) setTableError(true);
-      return;
     }
-    setEvents(rows);
   }, [dateFrom, dateTo]);
 
   useEffect(() => { load(); }, [load]);
@@ -333,9 +352,9 @@ function AnalyticsContent({ onBack }) {
           <div className="flex flex-wrap items-stretch gap-4 mb-4">
             {/* Live status pills */}
             <div className="flex flex-col justify-center gap-2 shrink-0">
-              <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                Live · {events.length.toLocaleString()} events
+              <span className={`inline-flex items-center gap-1.5 ${loadingMore ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'} text-xs font-semibold px-3 py-1.5 rounded-full`}>
+                <span className={`w-2 h-2 rounded-full ${loadingMore ? 'bg-amber-500' : 'bg-emerald-500'} animate-pulse inline-block`} />
+                {loadingMore ? `Fetching… ${events.length.toLocaleString()} events` : `Live · ${events.length.toLocaleString()} events`}
               </span>
               {activeVisitors !== null && (
                 <span className="inline-flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-full">
