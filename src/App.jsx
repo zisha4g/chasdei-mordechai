@@ -50,6 +50,7 @@ function AppContent() {
     setIsFormOpen(false);
     const name = encodeURIComponent(data.firstName || '');
     const amount = encodeURIComponent(data.amount || '');
+    console.log('[Donation Debug]', 'navigate to thank-you', { data, name, amount });
     navigate(`/thank-you?name=${name}&amount=${amount}`, { state: { donor: data } });
   };
 

@@ -9,6 +9,7 @@ import { hasRaffleEntryBeenLogged, trackDonateOpen, trackDonationCompleted, trac
 const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
   const { toast } = useToast();
   const { settings, refresh } = useSiteSettings();
+  const donationDebugLabel = '[Donation Debug]';
   const [amount, setAmount] = useState(initialAmount || 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,8 +38,10 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const isSuccessfulDonationResult = (result) => {
-    if (!result || result === false) return false;
+  const getDonationDecision = (result) => {
+    if (!result || result === false) {
+      return { isSuccess: false, reason: 'empty-result' };
+    }
 
     const isExplicitCancel =
       result === null ||
@@ -48,23 +51,47 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       result?.status === 'cancelled' ||
       result?.status === 'canceled' ||
       result?.status === 'closed' ||
+      result?.status === 'back' ||
       result?.closed === true;
 
-    if (isExplicitCancel) return false;
+    if (isExplicitCancel) {
+      return { isSuccess: false, reason: 'explicit-cancel', result };
+    }
 
-    return (
+    const paymentProof =
+      result?.transactionId ||
+      result?.transaction_id ||
+      result?.paymentId ||
+      result?.payment_id ||
+      result?.confirmationId ||
+      result?.confirmation_id ||
+      result?.data?.transactionId ||
+      result?.data?.transaction_id ||
+      result?.data?.paymentId ||
+      result?.data?.payment_id ||
+      result?.data?.confirmationId ||
+      result?.data?.confirmation_id;
+
+    const reportedAmount = result?.data?.amount ?? result?.amount;
+    const hasSuccessStatus =
       result?.success === true ||
       result?.status === 'success' ||
       result?.status === 'completed' ||
-      result?.status === 'paid' ||
-      result?.paid === true ||
-      result?.completed === true ||
-      result?.data?.success === true ||
-      result?.data?.status === 'success' ||
-      result?.data?.status === 'completed' ||
-      result?.data?.status === 'paid' ||
-      result?.data?.paid === true
-    );
+      result?.status === 'paid';
+
+    if (!hasSuccessStatus) {
+      return { isSuccess: false, reason: 'missing-success-status', paymentProof, reportedAmount, result };
+    }
+
+    if (!paymentProof) {
+      return { isSuccess: false, reason: 'missing-payment-proof', reportedAmount, result };
+    }
+
+    if (reportedAmount == null || reportedAmount === '') {
+      return { isSuccess: false, reason: 'missing-amount', paymentProof, result };
+    }
+
+    return { isSuccess: true, reason: 'confirmed-success', paymentProof, reportedAmount, result };
   };
 
   const handleSubmit = (e) => {
@@ -96,17 +123,44 @@ const DonationForm = ({ isOpen, onClose, onSuccess, initialAmount }) => {
       phone: phone || undefined,
     };
 
+    console.log(donationDebugLabel, 'opening popup', {
+      amount,
+      link: options.link,
+      campaign: options.campaign,
+      firstName: formData.firstName,
+      lastName: formData.lastName || null,
+      email: formData.email,
+      phone: phone || null,
+    });
+
     window.DonorFuseClient.ShowPopup(options, (result) => {
       setIsSubmitting(false);
 
-      if (isSuccessfulDonationResult(result)) {
-        const actualAmount = result?.data?.amount ?? result?.amount ?? amount;
+      const decision = getDonationDecision(result);
+      console.log(donationDebugLabel, 'popup callback', {
+        decision,
+        result,
+      });
+
+      if (decision.isSuccess) {
+        const actualAmount = decision.reportedAmount;
         trackDonationCompleted(actualAmount);
         if (!hasRaffleEntryBeenLogged()) {
           trackRaffleEntry();
         }
         onSuccess({ firstName: formData.firstName, lastName: formData.lastName, email: formData.email, phone: formData.phone, amount: actualAmount });
         setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+      } else {
+        console.log(donationDebugLabel, 'popup rejected', {
+          reason: decision.reason,
+          amount,
+          result,
+        });
+        toast({
+          title: 'Donation not completed',
+          description: 'You can try again if you meant to finish the donation.',
+          variant: 'destructive',
+        });
       }
     });
   };

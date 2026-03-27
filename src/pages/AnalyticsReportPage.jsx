@@ -222,8 +222,6 @@ function AnalyticsContent({ onBack }) {
   const allSessions = Object.values(sessionMap)
     .sort((a, b) => new Date(b.events[0].created_at) - new Date(a.events[0].created_at));
 
-  const visibleSessions = allSessions.slice(0, 100);
-
   const uniqueVisitors       = allSessions.length;
   const uniqueSessionsForEvent = (name) => allSessions.filter(s => s.events.some(e => e.event === name)).length;
   const uniqueVideoViewers   = uniqueSessionsForEvent('video_play');
@@ -571,7 +569,7 @@ function AnalyticsContent({ onBack }) {
                 </div>
 
                 <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-                  {visibleSessions.map((s) => {
+                  {allSessions.map((s) => {
                     const first    = s.events[0];
                     const last     = s.events[s.events.length - 1];
                     const duration = new Date(last.created_at) - new Date(first.created_at);
